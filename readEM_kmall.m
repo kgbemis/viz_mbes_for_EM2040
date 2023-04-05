@@ -5,11 +5,12 @@
 
 %% open an EM data file 
 
-filelocation = './';
+filelocation = '../MBES_raw_data/';
 %filename='0009_20200918_094230.kmall';
 filename='0010_20200918_095915.kmall';
 
 fname = fullfile(filelocation,filename);
+fprintf('reading file: %s \n',fname)
 
 % open selected file
 fid = fopen(fname,'r');
@@ -58,7 +59,7 @@ out_struct.time_nanosec = fread(fid,1,'uint32');
 fclose(fid);
 
 %% Call CFF function to get datagram structure in kmall file
-KMALLfileinfo = CFF_kmall_file_info(filename);
+KMALLfileinfo = CFF_kmall_file_info(fname);
 %   * |KMALLfileinfo|: structure about datagrams in KMALLfilename, with fields:
 %     * |file_name|: input file name
 %     * |fileSize|: file size in bytes
@@ -115,7 +116,7 @@ text(2000*ones(size(yticklabels)),b1(1).XEndPoints,infolabels,'VerticalAlignment
 
 %% now we want to read some datagrams and figure out what to do with the data!
 % this should read all the data
-KMALLdata = CFF_read_kmall(filename);
+KMALLdata = CFF_read_kmall(fname);
 
 % now have a set of stuctures in KMALLdata that contain the datagrams for
 % each type plus an info strucure
