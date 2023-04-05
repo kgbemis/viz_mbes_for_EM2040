@@ -121,7 +121,13 @@ KMALLdata = CFF_read_kmall(fname);
 % now have a set of stuctures in KMALLdata that contain the datagrams for
 % each type plus an info strucure
 
-wcdat=KMALLdata.EMdgmMWC;
+wcdat=KMALLdata.EMdgmMWC;  % water column data
+
+% next step - convert datagram time to matlab datenumber
+fprintf('start date = %s \n',...
+    datestr(datetime(wcdat(1).header.time_sec,'ConvertFrom','posixtime')))
+fprintf('end date = %s \n',...
+    datestr(datetime(wcdat(end).header.time_sec,'ConvertFrom','posixtime')))
 
 return
 % every thing beyond here is Liz's - mostly using as guide to which
