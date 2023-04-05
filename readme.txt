@@ -12,5 +12,11 @@ Things you will need to change for it too work:
     Note that this can be either an absolute or a relative path.
 2 - 
 
+Implemented functionality
+- gathers info from kmall file
+- displays number and type of datagrams
+- can extract start and end times
+- 
+
 ----
 latest readme file update - kgb 4/4/23
