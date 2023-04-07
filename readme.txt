@@ -16,6 +16,7 @@ Implemented functionality
 - gathers info from kmall file
 - displays number and type of datagrams
 - can extract start and end times
+- can verify if any split datagrams
 - 
 
 ----
