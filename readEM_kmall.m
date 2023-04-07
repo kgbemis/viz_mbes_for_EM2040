@@ -7,7 +7,9 @@
 
 filelocation = '../MBES_raw_data/';
 %filename='0009_20200918_094230.kmall';
-filename='0010_20200918_095915.kmall';
+%filename='0010_20200918_095915.kmall';
+%filename='0004_20230406_123411.kmall';
+filename='0004_20230406_123411.kmwcd';
 
 fname = fullfile(filelocation,filename);
 fprintf('reading file: %s \n',fname)
@@ -100,7 +102,8 @@ yticklabels(KMALLfileinfo.list_dgm_type)
 ylabel('Datagram Types')
 xlabel('Counts')
 datalabels=string(b1(1).YData);
-infolabels={'IIP=Installation parameters and sensor setup',...
+potdatalabels={'IIP','IOP','SVP','SKM','MWC','SVT','CHE'};
+fullinfolabellist={'IIP=Installation parameters and sensor setup',...
     'IOP= Runtime parameters as chosen by operator',...
     'SVP= sensor data from sound velocity profile or CTD',...
     'SKM= sensor KM binar sensor format',...
@@ -111,8 +114,15 @@ infolabels={'IIP=Installation parameters and sensor setup',...
     'CPO= Compatibility data for position',...
     'MRZ= Multibeam raw range and depth datagram',...
     'SCL= sensor data from clock'};
+%infolabels
+
+if sscanf(version('-release'),'%d')>2019
 text(200*ones(size(yticklabels)),b1(1).XEndPoints,datalabels,'VerticalAlignment','middle')
-text(2000*ones(size(yticklabels)),b1(1).XEndPoints,infolabels,'VerticalAlignment','middle')
+%text(2000*ones(size(yticklabels)),b1(1).XEndPoints,infolabels,'VerticalAlignment','middle')
+else
+text(200*ones(size(yticklabels)),b1(1).XData,datalabels,'VerticalAlignment','middle')
+%text(2000*ones(size(yticklabels)),b1(1).XData,infolabels,'VerticalAlignment','middle')
+end
 
 %% now we want to read some datagrams and figure out what to do with the data!
 % this should read all the data
