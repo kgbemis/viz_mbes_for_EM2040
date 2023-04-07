@@ -129,6 +129,41 @@ fprintf('start date = %s \n',...
 fprintf('end date = %s \n',...
     datestr(datetime(wcdat(end).header.time_sec,'ConvertFrom','posixtime')))
 
+Ndgm=length(wcdat);
+dgmtimes=zeros(Ndgm,1);
+numOfDgms=zeros(Ndgm,1);
+dgmNum=zeros(Ndgm,1);
+for i=1:Ndgm
+    dgmtimes(i)=datenum(datetime(wcdat(i).header.time_sec,'ConvertFrom','posixtime'));
+    numOfDgms(i)= wcdat(i).partition.numOfDgms;
+    dgmNum(i)= wcdat(i).partition.dgmNum;
+end
+figure(3)
+plot(dgmtimes,numOfDgms,'p',dgmtimes,dgmNum)
+
+% if numOfDgms always 1, can just proceed
+% assuming this for now
+
+for i=1:1  % just do the first ping for now
+    beamAngle=wcdat(i).beamData_p.beamPointAngReVertical_deg;
+    startRangeSampNum=wcdat(i).beamData_p.startRangeSampleNum;
+    numSamps=wcdat(i).beamData_p.numSampleData; % not sure this is correct
+    xmitSectNum=wcdat(i).beamData_p.beamTxSectorNum;
+    %beamNum=wcdat(i).beamData_p.?
+    %beamAmp  don't think this is here
+    %DR huh?
+    
+    % from Liz's code - don't need offsetidx for now
+    %indx = 1:length(beamAngleTemp);
+    %beamAngle(offsetidx + indx) = beamAngleTemp;
+    %startRangeSampNum(offsetidx + indx) = startRangeSampNumTemp;
+    %numSamps(offsetidx + indx) = numSampsTemp;
+    %xmitSectNum(offsetidx + indx) = xmitSectNumRecTemp;
+    %beamNum(offsetidx + indx) = beamNumTemp;
+    %beamAmp(offsetidx + indx,1:length(beamAmpTemp(1,:))) = beamAmpTemp;
+    %DR(offsetidx + indx) = DRtemp;
+end
+            
 return
 % every thing beyond here is Liz's - mostly using as guide to which
 % datagrams are needed and other steps
