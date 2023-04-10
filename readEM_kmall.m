@@ -139,27 +139,66 @@ fprintf('start date = %s \n',...
 fprintf('end date = %s \n',...
     datestr(datetime(wcdat(end).header.time_sec,'ConvertFrom','posixtime')))
 
+% Note: might be able to replace this section with with four lines that
+% just index into the single number, e.g. "wcdat.header.time_sec"   
+% Second Note: pingcount is really an incremeted label that may or may not
+% start at 1 ==> subtract to get number of pings between two times
 Ndgm=length(wcdat);
-dgmtimes=zeros(Ndgm,1);
+dgmtimes=NaT(Ndgm,1);
 numOfDgms=zeros(Ndgm,1);
 dgmNum=zeros(Ndgm,1);
+pingcount=zeros(Ndgm,1);
 for i=1:Ndgm
-    dgmtimes(i)=datenum(datetime(wcdat(i).header.time_sec,'ConvertFrom','posixtime'));
+    dgmtimes(i)=datetime(wcdat(i).header.time_sec,'ConvertFrom','posixtime');
     numOfDgms(i)= wcdat(i).partition.numOfDgms;
     dgmNum(i)= wcdat(i).partition.dgmNum;
+    pingcount(i)=wcdat(i).cmnPart.pingCnt;
 end
 figure(3)
+subplot(211)
 plot(dgmtimes,numOfDgms,'p',dgmtimes,dgmNum)
+subplot(212)
+plot(dgmtimes,pingcount)
+fprintf('first ping count = %d\n',pingcount(1))
+fprintf('last ping count = %d\n',pingcount(end))
+fprintf('total counts = %d\n',pingcount(end)-pingcount(1)+1)
 
 % if numOfDgms always 1, can just proceed
 % assuming this for now
 
-for i=1:1  % just do the first ping for now
-    beamAngle=wcdat(i).beamData_p.beamPointAngReVertical_deg;
+% setting a fixed watercolumn buffer in meters
+maxWCSampIdx = 600;
+
+
+%dgmtime=NaT(num,1); would create empty 
+for idgm=1:1  % just do the first ping for now
+    % header
+        % time coming from datagram header - already pulled
+        %dgmtime(idgm)=datetime(wcdat(idgm).header.dgtime,'ConvertFrom','posixtime');
+        thistime=dgmtimes(idgm);
+    % partition - has the datagram number and split info
+    DatagramNum=wcdat(idgm).partition.dgmNum;
+    NumDatagrams=wcdat(idgm).partition.numOfDgms;
+    % cmnPart - not sure if will need this info
+    % txInfo - not sure if will need this info
+        numSectors=wcdat(idgm).txInfo.numTxSectors;
+    % sectorData - not sure if will need this info
+        % EM2040 tranmits in multiple sectors -- need to check how actually
+        % set up - could be a 3-sector or 4-sector or other
+        TxBeamWidth=zeros(NumSectors,1);
+        for isec=1:numSectors
+            TxBeamWidth(isec)=wcdat(idgm).sectorData(isec).txBeamWidthAlong_deg;
+        end
+    % rxInfo - not sure if will need this info
+    SoundSpeed=wcdat(idgm).rxInfo.soundVelocity_mPerSec;
+    SampFreq=wcdat(idgm).rxInfo.sampleFreq_Hz;
+    TVGFuncApplied=wcdat(idgm).rxInfo.TVGfunctionApplied;
+    TVGOffset=wcdat(idgm).rxInfo.TVGoffset_dB;
+        %RxBeamWidth=wcdat(iping).rxInfo.nothere    beamAngle=wcdat(i).beamData_p.beamPointAngReVertical_deg;
     startRangeSampNum=wcdat(i).beamData_p.startRangeSampleNum;
     numSamps=wcdat(i).beamData_p.numSampleData; % not sure this is correct
     xmitSectNum=wcdat(i).beamData_p.beamTxSectorNum;
-    %beamNum=wcdat(i).beamData_p.?
+    %beamNum=wcdat(i).beamData_p.?  ask Liz what this is
     %beamAmp  don't think this is here
     %DR huh?
     
@@ -172,6 +211,8 @@ for i=1:1  % just do the first ping for now
     %beamNum(offsetidx + indx) = beamNumTemp;
     %beamAmp(offsetidx + indx,1:length(beamAmpTemp(1,:))) = beamAmpTemp;
     %DR(offsetidx + indx) = DRtemp;
+
+    
 end
             
 return
