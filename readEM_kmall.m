@@ -181,7 +181,7 @@ for idgm=1:1  % just do the first ping for now
     NumDatagrams=wcdat(idgm).partition.numOfDgms;
     % cmnPart - not sure if will need this info
     % txInfo - not sure if will need this info
-        numSectors=wcdat(idgm).txInfo.numTxSectors;
+        NumSectors=wcdat(idgm).txInfo.numTxSectors;
     % sectorData - not sure if will need this info
         % EM2040 tranmits in multiple sectors -- need to check how actually
         % set up - could be a 3-sector or 4-sector or other
@@ -195,22 +195,142 @@ for idgm=1:1  % just do the first ping for now
     TVGFuncApplied=wcdat(idgm).rxInfo.TVGfunctionApplied;
     TVGOffset=wcdat(idgm).rxInfo.TVGoffset_dB;
         %RxBeamWidth=wcdat(iping).rxInfo.nothere    beamAngle=wcdat(i).beamData_p.beamPointAngReVertical_deg;
-    startRangeSampNum=wcdat(i).beamData_p.startRangeSampleNum;
-    numSamps=wcdat(i).beamData_p.numSampleData; % not sure this is correct
-    xmitSectNum=wcdat(i).beamData_p.beamTxSectorNum;
+    startRangeSampNum=wcdat(idgm).beamData_p.startRangeSampleNum;
+    numSamps=wcdat(idgm).beamData_p.numSampleData; % not sure this is correct
+    xmitSectNum=wcdat(idgm).beamData_p.beamTxSectorNum;
     %beamNum=wcdat(i).beamData_p.?  ask Liz what this is
-    %beamAmp  don't think this is here
+    %beamAmp - need to read from binary file still
+    beamAmpdata=read_bin_kmall(fname,wcdat(idgm));
     %DR huh?
-    
-    % from Liz's code - don't need offsetidx for now
-    %indx = 1:length(beamAngleTemp);
-    %beamAngle(offsetidx + indx) = beamAngleTemp;
-    %startRangeSampNum(offsetidx + indx) = startRangeSampNumTemp;
-    %numSamps(offsetidx + indx) = numSampsTemp;
-    %xmitSectNum(offsetidx + indx) = xmitSectNumRecTemp;
-    %beamNum(offsetidx + indx) = beamNumTemp;
-    %beamAmp(offsetidx + indx,1:length(beamAmpTemp(1,:))) = beamAmpTemp;
-    %DR(offsetidx + indx) = DRtemp;
+    Nrx=wcdat(idgm).rxInfo.numBeams;
+    beamAngle=wcdat(idgm).beamData_p.beamPointAngReVertical_deg;
+    beamAmp=zeros(Nrx,1);
+    for ibeam=1:Nrx
+        tempBeamAmp=beamAmpdata(ibeam).sampleAmplitude05dB_p;
+        beamAmp(ibeam,1:numSamps(ibeam))=tempBeamAmp;
+        DR=ones(Nrx,1);  % no idea if this makes sense
+    end
+
+        % this part is very much Liz's code
+    if DatagramNum == NumDatagrams
+        pingidx = idgm;  % since we know ping numbers, just set rather than counting
+
+        pingTime(pingidx) = thistime/1000;    % time in seconds since midnight
+
+        size(beamAmp)
+        size(zeros(NumRecBeams,maxWCSampIdx-length(beamAmp(1,:)))-999)
+        beamAmp = [beamAmp zeros(NumRecBeams,maxWCSampIdx-length(beamAmp(1,:)))-999];
+
+        %disp({'SoundSpeed=' SoundSpeed});
+        %disp({'SampFreq=' SampFreq});
+
+        % range in meters
+        range =  (1:(length(beamAmp(1,:))))*SoundSpeed/10/2/(SampFreq/100);
+
+        % pad with zeros out to the maximum range
+        range = [range zeros(1,maxWCSampIdx-length(range))];   
+
+        % this is depth
+        %z = cos(beamAngle'/100*pi/180)*range;  
+        z = cos(beamAngle/100*pi/180)*range;  
+
+        % this is across-trackd distance
+        %y = sin(beamAngle'/100*pi/180)*range;
+        y = sin(beamAngle/100*pi/180)*range;
+
+        Awc = beamAmp/2;
+
+        X = TVGFuncApplied;
+        C = TVGOffset;
+        clear TS
+        RTval=10*log10((RxBeamWidth/10)*pi/1800*(TxBeamWidth/10)*pi/1800);
+        TS = Awc + RTval.*ones(size(Awc)) - double(X).*log10(ones(length(Awc(:,1)),1)*range) + 40*log10(ones(length(Awc(:,1)),1)*range) - double(C);
+        tsBuf1(pingidx,1:length(TS(:,1)),1:length(TS(1,:))) = TS;
+
+        steeringangle = beamAngle/100;
+        recieveAngle = 1./cos(steeringangle*pi/180);
+
+        RxRad = (RxBeamWidth/10)*pi/1800;
+        Length = 2*range*sin(RxRad/2);
+
+        TxRad = (TxBeamWidth/10)*pi/1800*recieveAngle;
+        %Width = 2*ones(length(TxRad),length(range)).*range.*(sin(TxRad./2)).';
+        Width = 2*ones(length(TxRad),length(range)).*range.*(sin(TxRad./2));
+        BeamArea = Length.*Width;
+
+        Tau = 3500/1e5;
+        for ii = 1:size(TS,2)
+
+            Vol_log = 10*log10(BeamArea(:,ii)*Tau*SoundSpeed/2);
+            Sv(:,ii) = TS(:,ii) - Vol_log;
+        end
+
+        for aa = 1:NumBeamsHere
+            if DR(aa) ~= 0
+                yBottom(pingidx,aa) = y(aa,DR(aa));
+                zBottom(pingidx,aa) = z(aa,DR(aa));
+            else
+                yBottom(pingidx,aa) = 0;
+                zBottom(pingidx,aa) = 0;
+            end
+        end
+
+
+        [~,nadir_idx] = min(abs(yBottom(pingidx,:)-35));
+
+        if zBottom(nadir_idx) ~= 0
+            nadir_idx = nadir_idx;
+        elseif zBottom(nadir_idx + 1) ~= 0
+            nadir_idx = nadir_idx + 1;
+        else
+            nadir_idx = nadir_idx - 1;
+        end
+                     figure(1)
+                     subplot(211)
+                     pcolor(y,z,TS); shading flat; axis equal; set(gca,'ydir','reverse');
+                     set(gca,'fontname','Times'); caxis([-100 0]); colorbar
+                     title(['Ping ' num2str(pingidx) ': TS'])
+                     ylim([0 300])
+                     hold on
+                     plot(yBottom(pingidx,:),zBottom(pingidx,:),'r.')
+                     hold off 
+                     
+                     subplot(212)
+                     pcolor(y,z,Sv); shading flat; axis equal; set(gca,'ydir','reverse');
+                     set(gca,'fontname','Times'); caxis([-100 0]); colorbar
+                     title(['Ping ' num2str(pingidx) ' :Sv'])
+                     hold on
+                     plot(yBottom(pingidx,:),zBottom(pingidx,:),'r.')
+                     ylim([0 300])
+                     hold off
+    %                 drawnow
+    % %                 plot(y(bin_idx),z(bin_idx),'rs')
+    %                 pause(0.05)
+
+        cut_Sv  = Sv(:,1:nadir_idx);
+        cut_y   = y(:,1:nadir_idx);
+        cut_z   = z(:,1:nadir_idx);
+
+        bin_edges = -150:10:150;
+
+    %                 b_x = beam_x(pingidx,:);
+    %                 b_y = beam_y(pingidx,:);
+    %                 b_z = beam_z(pingidx,:);
+
+        for iping = 1:(length(bin_edges)-1)
+           bin_idx = cut_y < bin_edges(iping+1) & cut_y > bin_edges(iping);
+    %          test_mean(i)    = mean(cut_Sv(bin_idx));
+    %          test_max(i)     = max(cut_Sv(bin_idx));
+            test1 = movmean(cut_Sv(bin_idx),10);
+            test_mmax(iping) = max(test1);
+            y_mid(iping) =  mean(cut_y(bin_idx));
+        end 
+
+        y_mid_bin(pingidx,:) = y_mid;
+        z_nadir(pingidx) = zBottom(nadir_idx);
+        Sv_mmax(pingidx,:) = test_mmax;
+
+    end % inside datagram split check
 
     
 end
