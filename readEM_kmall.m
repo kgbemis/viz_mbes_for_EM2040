@@ -9,7 +9,8 @@ filelocation = '../MBES_raw_data/';
 %filename='0009_20200918_094230.kmall';
 %filename='0010_20200918_095915.kmall';
 %filename='0004_20230406_123411.kmall';
-filename='0004_20230406_123411.kmwcd';
+%filename='0004_20230406_123411.kmwcd';
+filename='0017_20230405_163521.kmwcd';
 
 fname = fullfile(filelocation,filename);
 fprintf('reading file: %s \n',fname)
@@ -86,7 +87,7 @@ KMALLfileinfo = CFF_kmall_file_info(fname);
 %     * |list_dgm_counter|: not sure if counts of instances?
 
 %% explore what is in the kmall file
-figure(1)
+figure(3)
 plot(KMALLfileinfo.dgm_num,'.')
 fprintf('min dgm_num= %d; max dgm_num=%d\n',...
     min(KMALLfileinfo.dgm_num),max(KMALLfileinfo.dgm_num))
@@ -95,7 +96,7 @@ fprintf('min sync_counter= %d; max sync_counter=%d\n',...
 fprintf('min parsed= %d; max parsed=%d\n',...
     min(KMALLfileinfo.parsed),max(KMALLfileinfo.parsed))
 
-figure(2)
+figure(4)
 b1=barh(KMALLfileinfo.list_dgm_counter,...
     'FaceColor',[0.7 0.9 0.7],'EdgeColor',[0.7 0.9 0.7]);
 yticklabels(KMALLfileinfo.list_dgm_type)
@@ -139,6 +140,7 @@ fprintf('start date = %s \n',...
 fprintf('end date = %s \n',...
     datestr(datetime(wcdat(end).header.time_sec,'ConvertFrom','posixtime')))
 
+
 % Note: might be able to replace this section with with four lines that
 % just index into the single number, e.g. "wcdat.header.time_sec"   
 % Second Note: pingcount is really an incremeted label that may or may not
@@ -154,7 +156,7 @@ for i=1:Ndgm
     dgmNum(i)= wcdat(i).partition.dgmNum;
     pingcount(i)=wcdat(i).cmnPart.pingCnt;
 end
-figure(3)
+figure(5)
 subplot(211)
 plot(dgmtimes,numOfDgms,'p',dgmtimes,dgmNum)
 subplot(212)
@@ -163,15 +165,18 @@ fprintf('first ping count = %d\n',pingcount(1))
 fprintf('last ping count = %d\n',pingcount(end))
 fprintf('total counts = %d\n',pingcount(end)-pingcount(1)+1)
 
+%% section loop over pings out
 % if numOfDgms always 1, can just proceed
 % assuming this for now
 
 % setting a fixed watercolumn buffer in meters
 maxWCSampIdx = 600;
 
+% setting receive beamwidth arbitrarily (need to find where to read)
+RxBeamWidth=1;
 
 %dgmtime=NaT(num,1); would create empty 
-for idgm=1:1  % just do the first ping for now
+for idgm=1:5  % just do the first ping for now
     % header
         % time coming from datagram header - already pulled
         %dgmtime(idgm)=datetime(wcdat(idgm).header.dgtime,'ConvertFrom','posixtime');
@@ -186,7 +191,7 @@ for idgm=1:1  % just do the first ping for now
         % EM2040 tranmits in multiple sectors -- need to check how actually
         % set up - could be a 3-sector or 4-sector or other
         TxBeamWidth=zeros(NumSectors,1);
-        for isec=1:numSectors
+        for isec=1:NumSectors
             TxBeamWidth(isec)=wcdat(idgm).sectorData(isec).txBeamWidthAlong_deg;
         end
     % rxInfo - not sure if will need this info
@@ -203,69 +208,76 @@ for idgm=1:1  % just do the first ping for now
     beamAmpdata=read_bin_kmall(fname,wcdat(idgm));
     %DR huh?
     Nrx=wcdat(idgm).rxInfo.numBeams;
-    beamAngle=wcdat(idgm).beamData_p.beamPointAngReVertical_deg;
+    beamAngle=wcdat(idgm).beamData_p.beamPointAngReVertical_deg';
+    DR=wcdat(idgm).beamData_p.detectedRangeInSamples; % no idea if this makes sense
     beamAmp=zeros(Nrx,1);
     for ibeam=1:Nrx
         tempBeamAmp=beamAmpdata(ibeam).sampleAmplitude05dB_p;
         beamAmp(ibeam,1:numSamps(ibeam))=tempBeamAmp;
-        DR=ones(Nrx,1);  % no idea if this makes sense
     end
 
         % this part is very much Liz's code
     if DatagramNum == NumDatagrams
         pingidx = idgm;  % since we know ping numbers, just set rather than counting
 
-        pingTime(pingidx) = thistime/1000;    % time in seconds since midnight
+        pingTime(pingidx) = thistime;    % datetime
+        elapsedsec=(pingTime(idgm)-pingTime(1))*24*60*60;
 
-        size(beamAmp)
-        size(zeros(NumRecBeams,maxWCSampIdx-length(beamAmp(1,:)))-999)
-        beamAmp = [beamAmp zeros(NumRecBeams,maxWCSampIdx-length(beamAmp(1,:)))-999];
+        %size(beamAmp)
+        %size(zeros(Nrx,maxWCSampIdx-length(beamAmp(1,:)))-999)
+        beamAmp = [beamAmp zeros(Nrx,maxWCSampIdx-length(beamAmp(1,:)))-999];
 
         %disp({'SoundSpeed=' SoundSpeed});
         %disp({'SampFreq=' SampFreq});
 
         % range in meters
-        range =  (1:(length(beamAmp(1,:))))*SoundSpeed/10/2/(SampFreq/100);
+        %range =  (1:(length(beamAmp(1,:))))*SoundSpeed/10/2/(SampFreq/100);
+        range =  (1:(length(beamAmp(1,:))))*SoundSpeed/2/SampFreq;
 
         % pad with zeros out to the maximum range
         range = [range zeros(1,maxWCSampIdx-length(range))];   
 
         % this is depth
         %z = cos(beamAngle'/100*pi/180)*range;  
-        z = cos(beamAngle/100*pi/180)*range;  
+        z = cos(beamAngle*pi/180)*range;  % my angle in straight degrees
 
         % this is across-trackd distance
         %y = sin(beamAngle'/100*pi/180)*range;
-        y = sin(beamAngle/100*pi/180)*range;
+        y = sin(beamAngle*pi/180)*range;
 
         Awc = beamAmp/2;
 
         X = TVGFuncApplied;
         C = TVGOffset;
         clear TS
-        RTval=10*log10((RxBeamWidth/10)*pi/1800*(TxBeamWidth/10)*pi/1800);
+        %RTval=10*log10((RxBeamWidth/10)*pi/1800*(TxBeamWidth/10)*pi/1800);
+        RTval=10*log10(RxBeamWidth*pi/180*TxBeamWidth(2)*pi/180);
         TS = Awc + RTval.*ones(size(Awc)) - double(X).*log10(ones(length(Awc(:,1)),1)*range) + 40*log10(ones(length(Awc(:,1)),1)*range) - double(C);
         tsBuf1(pingidx,1:length(TS(:,1)),1:length(TS(1,:))) = TS;
 
-        steeringangle = beamAngle/100;
+        %steeringangle = beamAngle/100;
+        steeringangle = beamAngle;
         recieveAngle = 1./cos(steeringangle*pi/180);
 
-        RxRad = (RxBeamWidth/10)*pi/1800;
+        %RxRad = (RxBeamWidth/10)*pi/1800;
+        RxRad = RxBeamWidth*pi/180;
         Length = 2*range*sin(RxRad/2);
 
-        TxRad = (TxBeamWidth/10)*pi/1800*recieveAngle;
+        %TxRad = (TxBeamWidth/10)*pi/1800*recieveAngle;
+        TxRad = TxBeamWidth(2)*pi/180*recieveAngle;
         %Width = 2*ones(length(TxRad),length(range)).*range.*(sin(TxRad./2)).';
         Width = 2*ones(length(TxRad),length(range)).*range.*(sin(TxRad./2));
         BeamArea = Length.*Width;
 
         Tau = 3500/1e5;
+        Sv=zeros(size(TS));
         for ii = 1:size(TS,2)
 
             Vol_log = 10*log10(BeamArea(:,ii)*Tau*SoundSpeed/2);
             Sv(:,ii) = TS(:,ii) - Vol_log;
         end
 
-        for aa = 1:NumBeamsHere
+        for aa = 1:Nrx
             if DR(aa) ~= 0
                 yBottom(pingidx,aa) = y(aa,DR(aa));
                 zBottom(pingidx,aa) = z(aa,DR(aa));
@@ -287,52 +299,58 @@ for idgm=1:1  % just do the first ping for now
         end
                      figure(1)
                      subplot(211)
-                     pcolor(y,z,TS); shading flat; axis equal; set(gca,'ydir','reverse');
-                     set(gca,'fontname','Times'); caxis([-100 0]); colorbar
+                     pcolor(y,z,TS); 
+                        shading flat; axis equal; 
+                        set(gca,'ydir','reverse');
+                     set(gca,'fontname','Times'); 
+                        caxis([-140 -60]); colorbar
                      title(['Ping ' num2str(pingidx) ': TS'])
-                     ylim([0 300])
+                     ylim([0 6])
                      hold on
                      plot(yBottom(pingidx,:),zBottom(pingidx,:),'r.')
                      hold off 
                      
                      subplot(212)
-                     pcolor(y,z,Sv); shading flat; axis equal; set(gca,'ydir','reverse');
-                     set(gca,'fontname','Times'); caxis([-100 0]); colorbar
+                     pcolor(y,z,Sv); 
+                        shading flat; axis equal; 
+                        set(gca,'ydir','reverse');
+                     set(gca,'fontname','Times'); 
+                        caxis([-140 -60]); colorbar
                      title(['Ping ' num2str(pingidx) ' :Sv'])
                      hold on
                      plot(yBottom(pingidx,:),zBottom(pingidx,:),'r.')
-                     ylim([0 300])
+                     ylim([0 6])
                      hold off
     %                 drawnow
     % %                 plot(y(bin_idx),z(bin_idx),'rs')
     %                 pause(0.05)
 
-        cut_Sv  = Sv(:,1:nadir_idx);
-        cut_y   = y(:,1:nadir_idx);
-        cut_z   = z(:,1:nadir_idx);
+    %    cut_Sv  = Sv(:,1:nadir_idx);
+    %    cut_y   = y(:,1:nadir_idx);
+    %    cut_z   = z(:,1:nadir_idx);
 
-        bin_edges = -150:10:150;
+   %     bin_edges = -150:10:150;
 
     %                 b_x = beam_x(pingidx,:);
     %                 b_y = beam_y(pingidx,:);
     %                 b_z = beam_z(pingidx,:);
 
-        for iping = 1:(length(bin_edges)-1)
-           bin_idx = cut_y < bin_edges(iping+1) & cut_y > bin_edges(iping);
+    %    for iping = 1:(length(bin_edges)-1)
+    %       bin_idx = cut_y < bin_edges(iping+1) & cut_y > bin_edges(iping);
     %          test_mean(i)    = mean(cut_Sv(bin_idx));
     %          test_max(i)     = max(cut_Sv(bin_idx));
-            test1 = movmean(cut_Sv(bin_idx),10);
-            test_mmax(iping) = max(test1);
-            y_mid(iping) =  mean(cut_y(bin_idx));
-        end 
+    %        test1 = movmean(cut_Sv(bin_idx),10);
+    %        test_mmax(iping) = max(test1);
+    %        y_mid(iping) =  mean(cut_y(bin_idx));
+    %    end 
 
-        y_mid_bin(pingidx,:) = y_mid;
-        z_nadir(pingidx) = zBottom(nadir_idx);
-        Sv_mmax(pingidx,:) = test_mmax;
+    %    y_mid_bin(pingidx,:) = y_mid;
+    %    z_nadir(pingidx) = zBottom(nadir_idx);
+    %    Sv_mmax(pingidx,:) = test_mmax;
 
     end % inside datagram split check
 
-    
+    pause
 end
             
 return
