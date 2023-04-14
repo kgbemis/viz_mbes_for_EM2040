@@ -5,12 +5,41 @@
 
 %% open an EM data file 
 
-filelocation = '../MBES_raw_data/';
+%filelocation = '../MBES_raw_data/';
+filelocation = 'e:UNH_tank_experiment\EM2040\UNH_EM2040_40_Apr_13_2023\';
 %filename='0009_20200918_094230.kmall';
 %filename='0010_20200918_095915.kmall';
-%filename='0004_20230406_123411.kmall';
+%filename='0004_20230406_123411.kmall'; % apr 6 - flow setup issues
 %filename='0004_20230406_123411.kmwcd';
-filename='0017_20230405_163521.kmwcd';
+%filename='0017_20230405_163521.kmwcd'; % apr 5 - hot flow good
+%filename='0005_20230413_141335.kmwcd';
+%filename='0006_20230413_143146.kmwcd';
+%filename='0007_20230413_143346.kmwcd';
+%filename='0008_20230413_143848.kmwcd';
+%filename='0009_20230413_143947.kmwcd';
+%filename='0010_20230413_144205.kmwcd';
+%filename='0011_20230413_144251.kmwcd';
+%filename='0000_20230413_160721.kmwcd';
+%filename='0001_20230413_160826.kmwcd';
+%filename='0002_20230413_161101.kmwcd';
+%filename='0003_20230413_161138.kmwcd';
+%filename='0004_20230413_161651.kmwcd';
+
+
+%filename='0017_20230405_163521.kmwcd'; % apr13-B-cold flow-200 kHz
+%filename='0020_20230413_171151.kmwcd'; % apr13-575Hz
+%filename='0021_20230413_171231.kmwcd'; % apr13-B-hot flow-300 kHz
+%filename='0022_20230413_172311.kmwcd'; % apr13-B-hot flow-200 kHz-gas 
+%filename='0023_20230413_172348.kmwcd'; % apr13-B-hot flow-200 kHz-gas 
+%filename='0024_20230413_172544.kmwcd'; % apr13-320Hz 
+%filename='0024_20230413_172544.kmwcd'; % apr13-B-hot flow-600 kHz
+%filename='0025_20230413_172618.kmwcd'; % apr13-B-
+%filename='0026_20230413_174909.kmwcd'; % apr13-? flow-? kHz
+%filename='0027_20230413_175000.kmwcd'; titlestr='apr13-B-? flow-200kHz';
+%filename='0077_20230413_190346.kmwcd';
+%filename='0078_20230413_190400.kmwcd';
+%filename='0079_20230413_190422.kmwcd';
+%filename='0081_20230413_190450.kmwcd';
 
 fname = fullfile(filelocation,filename);
 fprintf('reading file: %s \n',fname)
@@ -139,7 +168,7 @@ fprintf('start date = %s \n',...
     datestr(datetime(wcdat(1).header.time_sec,'ConvertFrom','posixtime')))
 fprintf('end date = %s \n',...
     datestr(datetime(wcdat(end).header.time_sec,'ConvertFrom','posixtime')))
-
+fprintf('central frequency of center sector = %f \n',wcdat(1).sectorData(1).centreFreq_Hz)
 
 % Note: might be able to replace this section with with four lines that
 % just index into the single number, e.g. "wcdat.header.time_sec"   
@@ -175,8 +204,12 @@ maxWCSampIdx = 600;
 % setting receive beamwidth arbitrarily (need to find where to read)
 RxBeamWidth=1;
 
+% setting velocity for along track direction
+cartspeed=0.34;
+
 %dgmtime=NaT(num,1); would create empty 
-for idgm=1:5  % just do the first ping for now
+for idgm=1:Ndgm  % just do the first ping for now
+    %fprintf('reading %d-th ping now\n',idgm)
     % header
         % time coming from datagram header - already pulled
         %dgmtime(idgm)=datetime(wcdat(idgm).header.dgtime,'ConvertFrom','posixtime');
@@ -348,10 +381,53 @@ for idgm=1:5  % just do the first ping for now
     %    z_nadir(pingidx) = zBottom(nadir_idx);
     %    Sv_mmax(pingidx,:) = test_mmax;
 
+    YY(:,:,idgm)=y(:,1:600);
+    ZZ(:,:,idgm)=z(:,1:600);
+    SV(:,:,idgm)=Sv(:,1:600);
+    TT(:,:,idgm)=TS(:,1:600);
+    XX(:,:,idgm)=cartspeed*elapsedsec*ones(256,600);
+    xBottom(idgm,:)=cartspeed*elapsedsec*ones(1,256);
+
     end % inside datagram split check
 
-    pause
+    %pause
 end
+
+thisbeam=150;
+figure(2)
+pcolor(squeeze(XX(thisbeam,:,:)),squeeze(ZZ(thisbeam,:,:)),squeeze(SV(thisbeam,:,:)))
+shading flat
+set(gca,'ydir','reverse');
+set(gca,'fontname','Times'); 
+caxis([-100 -40]); colorbar
+title(['end Ping ' num2str(pingidx) ' :Sv'])
+hold on
+ plot(xBottom(:,thisbeam),zBottom(:,thisbeam),'r.')
+ ylim([0 6])
+hold off
+
+
+%figure(3)
+%p = patch(isosurface(XX,YY,ZZ,SV,-80));
+%isonormals(XX,YY,ZZ,SV,p)
+%p.FaceColor = 'red';
+%p.EdgeColor = 'none';
+%daspect([1 1 1])
+%view(3); 
+%axis tight
+%camlight 
+%lighting gouraud
+
+outdir='../MBES_mat_data/';
+datafile=filename(1:end-5);
+outmatfile=fullfile(outdir,[datafile 'mat']);
+outvizfile=fullfile(outdir,[datafile(1:end-1) '_viz.mat']);
+fprintf('saving to file %s \n',outmatfile)
+save(outmatfile,'wcdat')
+save(outvizfile,'XX','YY','ZZ','SV','TT','xBottom','yBottom','zBottom');
+
+
+fclose(fid);
             
 return
 % every thing beyond here is Liz's - mostly using as guide to which
