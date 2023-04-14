@@ -7,6 +7,7 @@
 
 %filelocation = '../MBES_raw_data/';
 filelocation = 'e:UNH_tank_experiment\EM2040\UNH_EM2040_40_Apr_13_2023\';
+%filelocation = 'e:UNH_tank_experiment\EM2040\UNH_EM2040_40_Apr2023_geoA\';
 %filename='0009_20200918_094230.kmall';
 %filename='0010_20200918_095915.kmall';
 %filename='0004_20230406_123411.kmall'; % apr 6 - flow setup issues
@@ -36,10 +37,15 @@ filelocation = 'e:UNH_tank_experiment\EM2040\UNH_EM2040_40_Apr_13_2023\';
 %filename='0025_20230413_172618.kmwcd'; % apr13-B-
 %filename='0026_20230413_174909.kmwcd'; % apr13-? flow-? kHz
 %filename='0027_20230413_175000.kmwcd'; titlestr='apr13-B-? flow-200kHz';
-%filename='0077_20230413_190346.kmwcd';
+%filename='0053_20230413_181816.kmwcd';
+filename='0077_20230413_190346.kmwcd';
 %filename='0078_20230413_190400.kmwcd';
 %filename='0079_20230413_190422.kmwcd';
 %filename='0081_20230413_190450.kmwcd';
+%filename='0065_20230413_184653.kmwcd';
+
+%filename='0024_20230414_163451.kmwcd'; % geoA 400hz
+%filename='0023_20230414_163427.kmwcd'; 
 
 fname = fullfile(filelocation,filename);
 fprintf('reading file: %s \n',fname)
@@ -178,9 +184,11 @@ Ndgm=length(wcdat);
 dgmtimes=NaT(Ndgm,1);
 numOfDgms=zeros(Ndgm,1);
 dgmNum=zeros(Ndgm,1);
+posixtimes=zeros(Ndgm,1);
 pingcount=zeros(Ndgm,1);
 for i=1:Ndgm
     dgmtimes(i)=datetime(wcdat(i).header.time_sec,'ConvertFrom','posixtime');
+    posixtimes(i)=wcdat(i).header.time_sec;
     numOfDgms(i)= wcdat(i).partition.numOfDgms;
     dgmNum(i)= wcdat(i).partition.dgmNum;
     pingcount(i)=wcdat(i).cmnPart.pingCnt;
@@ -220,6 +228,14 @@ for idgm=1:Ndgm  % just do the first ping for now
     % cmnPart - not sure if will need this info
     % txInfo - not sure if will need this info
         NumSectors=wcdat(idgm).txInfo.numTxSectors;
+        switch NumSectors
+            case 1
+                cenSec=1;
+            case 2
+                cenSec=1;
+            case 3
+                cenSec=2;
+        end
     % sectorData - not sure if will need this info
         % EM2040 tranmits in multiple sectors -- need to check how actually
         % set up - could be a 3-sector or 4-sector or other
@@ -248,13 +264,16 @@ for idgm=1:Ndgm  % just do the first ping for now
         tempBeamAmp=beamAmpdata(ibeam).sampleAmplitude05dB_p;
         beamAmp(ibeam,1:numSamps(ibeam))=tempBeamAmp;
     end
+    wcdat(idgm).beamData_p.beamAmp=beamAmp;
+    %wcdat(idgm).beamData_p.beamPhase=
 
         % this part is very much Liz's code
     if DatagramNum == NumDatagrams
         pingidx = idgm;  % since we know ping numbers, just set rather than counting
 
         pingTime(pingidx) = thistime;    % datetime
-        elapsedsec=(pingTime(idgm)-pingTime(1))*24*60*60;
+        %elapsedsec=seconds(pingTime(idgm)-pingTime(1));
+        elapsedsec=posixtimes(idgm)-posixtimes(1);
 
         %size(beamAmp)
         %size(zeros(Nrx,maxWCSampIdx-length(beamAmp(1,:)))-999)
@@ -284,7 +303,7 @@ for idgm=1:Ndgm  % just do the first ping for now
         C = TVGOffset;
         clear TS
         %RTval=10*log10((RxBeamWidth/10)*pi/1800*(TxBeamWidth/10)*pi/1800);
-        RTval=10*log10(RxBeamWidth*pi/180*TxBeamWidth(2)*pi/180);
+        RTval=10*log10(RxBeamWidth*pi/180*TxBeamWidth(cenSec)*pi/180);
         TS = Awc + RTval.*ones(size(Awc)) - double(X).*log10(ones(length(Awc(:,1)),1)*range) + 40*log10(ones(length(Awc(:,1)),1)*range) - double(C);
         tsBuf1(pingidx,1:length(TS(:,1)),1:length(TS(1,:))) = TS;
 
@@ -297,7 +316,7 @@ for idgm=1:Ndgm  % just do the first ping for now
         Length = 2*range*sin(RxRad/2);
 
         %TxRad = (TxBeamWidth/10)*pi/1800*recieveAngle;
-        TxRad = TxBeamWidth(2)*pi/180*recieveAngle;
+        TxRad = TxBeamWidth(cenSec)*pi/180*recieveAngle;
         %Width = 2*ones(length(TxRad),length(range)).*range.*(sin(TxRad./2)).';
         Width = 2*ones(length(TxRad),length(range)).*range.*(sin(TxRad./2));
         BeamArea = Length.*Width;
@@ -387,6 +406,7 @@ for idgm=1:Ndgm  % just do the first ping for now
     TT(:,:,idgm)=TS(:,1:600);
     XX(:,:,idgm)=cartspeed*elapsedsec*ones(256,600);
     xBottom(idgm,:)=cartspeed*elapsedsec*ones(1,256);
+    dTime(idgm)=elapsedsec;
 
     end % inside datagram split check
 
@@ -399,7 +419,7 @@ pcolor(squeeze(XX(thisbeam,:,:)),squeeze(ZZ(thisbeam,:,:)),squeeze(SV(thisbeam,:
 shading flat
 set(gca,'ydir','reverse');
 set(gca,'fontname','Times'); 
-caxis([-100 -40]); colorbar
+clim([-100 -40]); colorbar
 title(['end Ping ' num2str(pingidx) ' :Sv'])
 hold on
  plot(xBottom(:,thisbeam),zBottom(:,thisbeam),'r.')
@@ -424,7 +444,7 @@ outmatfile=fullfile(outdir,[datafile 'mat']);
 outvizfile=fullfile(outdir,[datafile(1:end-1) '_viz.mat']);
 fprintf('saving to file %s \n',outmatfile)
 save(outmatfile,'wcdat')
-save(outvizfile,'XX','YY','ZZ','SV','TT','xBottom','yBottom','zBottom');
+save(outvizfile,'XX','YY','ZZ','SV','TT','xBottom','yBottom','zBottom','dTime');
 
 
 fclose(fid);
@@ -432,6 +452,7 @@ fclose(fid);
 return
 % every thing beyond here is Liz's - mostly using as guide to which
 % datagrams are needed and other steps
+%********************************************************************
 
 %% start reading data file
 
