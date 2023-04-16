@@ -212,36 +212,52 @@ fprintf('central frequency of center sector = %f \n',wcdat(1).sectorData(1).cent
 % Second Note: pingcount is really an incremeted label that may or may not
 % start at 1 ==> subtract to get number of pings between two times
 Ndgm=length(wcdat);
-dgmtimes=NaT(Ndgm,1);
-numOfDgms=zeros(Ndgm,1);
-dgmNum=zeros(Ndgm,1);
-posixtimes=zeros(Ndgm,1);
-pingcount=zeros(Ndgm,1);
-tnanosec=zeros(Ndgm,1);
-ckNrx=zeros(Ndgm,1);
-for i=1:Ndgm
-    dgmtimes(i)=datetime(wcdat(i).header.time_sec,'ConvertFrom','posixtime');
-    posixtimes(i)=wcdat(i).header.time_sec;
-    tnanosec(i)=wcdat(i).header.time_nanosec;
-    numOfDgms(i)= wcdat(i).partition.numOfDgms;
-    dgmNum(i)= wcdat(i).partition.dgmNum;
-    pingcount(i)=wcdat(i).cmnPart.pingCnt;
-    ckNrx(i)=wcdat(i).rxInfo.numBeams;
-end
+%%dgmtimes=NaT(Ndgm,1);
+%numOfDgms=zeros(Ndgm,1);
+%dgmNum=zeros(Ndgm,1);
+%posixtimes=zeros(Ndgm,1);
+%pingcount=zeros(Ndgm,1);
+%tnanosec=zeros(Ndgm,1);
+%ckNrx=zeros(Ndgm,1);
+%for i=1:Ndgm
+%    dgmtimes(i)=datetime(wcdat(i).header.time_sec,'ConvertFrom','posixtime');
+%    posixtimes(i)=wcdat(i).header.time_sec;
+%    tnanosec(i)=wcdat(i).header.time_nanosec;
+%    numOfDgms(i)= wcdat(i).partition.numOfDgms;
+%    dgmNum(i)= wcdat(i).partition.dgmNum;
+%    pingcount(i)=wcdat(i).cmnPart.pingCnt;
+%    ckNrx(i)=wcdat(i).rxInfo.numBeams;
+%end
+ckNrx=arrayfun(@(x) x.rxInfo.numBeams,wcdat);
 if abs(mean(diff(ckNrx)))>0
     fprintf('WARNING: inconsistent number of beams across datagrams\n')
 end
+posixtimes=arrayfun(@(x) x.header.time_sec,wcdat);
+tnanosec=arrayfun(@(x) x.header.time_nanosec,wcdat);
+numOfDgms= arrayfun(@(x) x.partition.numOfDgms,wcdat);
+dgmNum= arrayfun(@(x) x.partition.dgmNum,wcdat);
+pingcount=arrayfun(@(x) x.cmnPart.pingCnt,wcdat);
+numbeams=arrayfun(@(x) x.rxInfo.numBeams,wcdat);
+%
+ckNumSectors=arrayfun(@(x) x.txInfo.numTxSectors,wcdat);
+dgmtimes=arrayfun(@(x) datetime(x.header.time_sec,'ConvertFrom','posixtime'),wcdat);
 if check_dgmtimes
     figure(5)
     subplot(211)
     plot(dgmtimes,numOfDgms,'p',dgmtimes,dgmNum)
     subplot(212)
-    plot(dgmtimes,pingcount)
+    plot(dgmtimes,pingcount,'.-')
     
     fprintf('first ping count = %d\n',pingcount(1))
     fprintf('last ping count = %d\n',pingcount(end))
     fprintf('total counts = %d\n',pingcount(end)-pingcount(1)+1)
 end
+
+figure(11)
+p = arrayfun(@(a) plot(a.beamData_p.beamTxSectorNum),wcdat);
+xlabel('beam number')
+ylabel('sector number')
+
 
 %% section loop over pings out
 % if numOfDgms always 1, can just proceed
