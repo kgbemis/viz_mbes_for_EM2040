@@ -3,6 +3,24 @@
 % used Liz's parsing codes as a start but have pulled in files from the
 % CoFFee code to read the new format and better grasp structure of files
 
+%% manual entry of parameters
+% sonar parameters
+maxWCSampIdx = 600; % setting a fixed watercolumn buffer in meters
+RxBeamWidth=1; % setting receive beamwidth arbitrarily (need to find where to read)
+cartspeed=0.34; % setting velocity for along track direction
+
+% operations choices
+dotest=1;
+describe_datagrams=1;
+% always reads kmall file info and kmwcd data
+check_dgmtimes=1; % always computes times, this just controls plots
+vizping=1;
+do3Dviz=1;
+savefiles=1;
+
+outdir='../MBES_mat_data/';
+
+
 %% open an EM data file 
 
 filelocation = '../MBES_raw_data/';
@@ -11,8 +29,9 @@ filelocation = '../MBES_raw_data/';
 %filename='0009_20200918_094230.kmall';
 %filename='0010_20200918_095915.kmall';
 %filename='0004_20230406_123411.kmall'; % apr 6 - flow setup issues
-%filename='0004_20230406_123411.kmwcd';
-%filename='0017_20230405_163521.kmwcd'; % apr 5 - hot flow good
+%filename='0004_20230406_123411.kmwcd';  %   too long (3407 pings) to read 
+                                        %   in one gulp
+filename='0017_20230405_163521.kmwcd'; % apr 5 - hot flow good
 %filename='0005_20230413_141335.kmwcd';
 %filename='0006_20230413_143146.kmwcd';
 %filename='0007_20230413_143346.kmwcd';
@@ -38,6 +57,7 @@ filelocation = '../MBES_raw_data/';
 %filename='0026_20230413_174909.kmwcd'; % apr13-? flow-? kHz
 %filename='0027_20230413_175000.kmwcd'; titlestr='apr13-B-? flow-200kHz';
 %filename='0053_20230413_181816.kmwcd';
+%filename='0075_20230414_193631.kmwcd'; % Liz got plume but I don't :-(
 %filename='0077_20230413_190346.kmwcd';
 %filename='0078_20230413_190400.kmwcd';
 %filename='0079_20230413_190422.kmwcd';
@@ -49,7 +69,7 @@ filelocation = '../MBES_raw_data/';
 
 %filename='0008_20230415_124857.kmwcd';
 %filename='0000_20230415_193500.kmwcd';
-filename='0003_20230415_200249.kmwcd';
+%filename='0003_20230415_200249.kmwcd';
 %filename='0004_20230415_204544.kmwcd';
 
 fname = fullfile(filelocation,filename);
@@ -64,42 +84,45 @@ fid = fopen(fname,'r');
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
 %   2017-2021; Last revision: 20-08-2021
 
-    fprintf('Initial header info in file:\n')
-% Datagram length in bytes. The length field at the start (4 bytes) and end
-% of the datagram (4 bytes) are included in the length count.
-out_struct.numBytesDgm = fread(fid,1,'uint32');
-    fprintf('size of next datagram: %d\n',out_struct.numBytesDgm)
+if dotest
+        fprintf('Initial header info in file:\n')
+    % Datagram length in bytes. The length field at the start (4 bytes) 
+    % and end of the datagram (4 bytes) are included in the length count.
+    out_struct.numBytesDgm = fread(fid,1,'uint32');
+        fprintf('size of next datagram: %d\n',out_struct.numBytesDgm)
 
-% Multi beam datagram type definition, e.g. #AAA
-out_struct.dgmType = fscanf(fid,'%c',4);
-    fprintf('datagram type: %s\n',out_struct.dgmType)
+    % Multi beam datagram type definition, e.g. #AAA
+    out_struct.dgmType = fscanf(fid,'%c',4);
+        fprintf('datagram type: %s\n',out_struct.dgmType)
 
-% Datagram version.
-out_struct.dgmVersion = fread(fid,1,'uint8');
-    fprintf('datagram version: %d\n',out_struct.dgmVersion)
+    % Datagram version.
+    out_struct.dgmVersion = fread(fid,1,'uint8');
+        fprintf('datagram version: %d\n',out_struct.dgmVersion)
 
-% System ID. Parameter used for separating datagrams from different
-% echosounders if more than one system is connected to SIS/K-Controller.
-out_struct.systemID = fread(fid,1,'uint8');
-    fprintf('system ID: %d\n',out_struct.systemID)
+    % System ID. Parameter used for separating datagrams from different
+    % echosounders if more than one system is connected to SIS/K-Controller.
+    out_struct.systemID = fread(fid,1,'uint8');
+        fprintf('system ID: %d\n',out_struct.systemID)
 
-% Echo sounder identity, e.g. 124, 304, 712, 2040, 2045 (EM 2040C)
-out_struct.echoSounderID = fread(fid,1,'uint16');
-    fprintf('echo sounder identity: %d\n',out_struct.echoSounderID)
+    % Echo sounder identity, e.g. 124, 304, 712, 2040, 2045 (EM 2040C)
+    out_struct.echoSounderID = fread(fid,1,'uint16');
+        fprintf('echo sounder identity: %d\n',out_struct.echoSounderID)
 
-% UTC time in seconds. Epoch 1970-01-01. time_nanosec part to be added for
-% more exact time.
-out_struct.time_sec = fread(fid,1,'uint32');
-    fprintf('time seconds: %d\n',out_struct.dgmVersion)
+    % UTC time in seconds. Epoch 1970-01-01. time_nanosec part to be added for
+    % more exact time.
+    out_struct.time_sec = fread(fid,1,'uint32');
+        fprintf('time seconds: %d\n',out_struct.dgmVersion)
 
-% Nano seconds remainder. time_nanosec part to be added to time_sec for
-% more exact time.
-out_struct.time_nanosec = fread(fid,1,'uint32');
-    fprintf('time nanoseconds: %d\n',out_struct.time_nanosec)
+    % Nano seconds remainder. time_nanosec part to be added to time_sec for
+    % more exact time.
+    out_struct.time_nanosec = fread(fid,1,'uint32');
+        fprintf('time nanoseconds: %d\n',out_struct.time_nanosec)
 
-    fprintf('\n')
-% close file as next steps will reopen
-fclose(fid);
+        fprintf('\n')
+    % close file as next steps will reopen
+    fclose(fid);
+
+end % dotest
 
 %% Call CFF function to get datagram structure in kmall file
 KMALLfileinfo = CFF_kmall_file_info(fname);
@@ -127,44 +150,46 @@ KMALLfileinfo = CFF_kmall_file_info(fname);
 %     * |list_dgm_counter|: not sure if counts of instances?
 
 %% explore what is in the kmall file
-figure(3)
-plot(KMALLfileinfo.dgm_num,'.')
-fprintf('min dgm_num= %d; max dgm_num=%d\n',...
-    min(KMALLfileinfo.dgm_num),max(KMALLfileinfo.dgm_num))
-fprintf('min sync_counter= %d; max sync_counter=%d\n',...
-    min(KMALLfileinfo.sync_counter),max(KMALLfileinfo.sync_counter))
-fprintf('min parsed= %d; max parsed=%d\n',...
-    min(KMALLfileinfo.parsed),max(KMALLfileinfo.parsed))
+if describe_datagrams
+    figure(3)
+    plot(KMALLfileinfo.dgm_num,'.')
+    fprintf('min dgm_num= %d; max dgm_num=%d\n',...
+        min(KMALLfileinfo.dgm_num),max(KMALLfileinfo.dgm_num))
+    fprintf('min sync_counter= %d; max sync_counter=%d\n',...
+        min(KMALLfileinfo.sync_counter),max(KMALLfileinfo.sync_counter))
+    fprintf('min parsed= %d; max parsed=%d\n',...
+        min(KMALLfileinfo.parsed),max(KMALLfileinfo.parsed))
 
-figure(4)
-b1=barh(KMALLfileinfo.list_dgm_counter,...
-    'FaceColor',[0.7 0.9 0.7],'EdgeColor',[0.7 0.9 0.7]);
-yticklabels(KMALLfileinfo.list_dgm_type)
-ylabel('Datagram Types')
-xlabel('Counts')
-datalabels=string(b1(1).YData);
-datalabelpos=max(KMALLfileinfo.list_dgm_counter)+2;
-potdatalabels={'IIP','IOP','SVP','SKM','MWC','SVT','CHE'};
-fullinfolabellist={'IIP=Installation parameters and sensor setup',...
-    'IOP= Runtime parameters as chosen by operator',...
-    'SVP= sensor data from sound velocity profile or CTD',...
-    'SKM= sensor KM binar sensor format',...
-    'MWC= Multibeam water column datagram', ...
-    'SVT= sensor data for sound velocity at transducer',...
-    'CHE= Compatibility data for heave',...
-    'SPO= sensor data for position',...
-    'CPO= Compatibility data for position',...
-    'MRZ= Multibeam raw range and depth datagram',...
-    'SCL= sensor data from clock'};
-%infolabels
+    figure(4)
+    b1=barh(KMALLfileinfo.list_dgm_counter,...
+        'FaceColor',[0.7 0.9 0.7],'EdgeColor',[0.7 0.9 0.7]);
+    yticklabels(KMALLfileinfo.list_dgm_type)
+    ylabel('Datagram Types')
+    xlabel('Counts')
+    datalabels=string(b1(1).YData);
+    datalabelpos=max(KMALLfileinfo.list_dgm_counter)+2;
+    potdatalabels={'IIP','IOP','SVP','SKM','MWC','SVT','CHE'};
+    fullinfolabellist={'IIP=Installation parameters and sensor setup',...
+        'IOP= Runtime parameters as chosen by operator',...
+        'SVP= sensor data from sound velocity profile or CTD',...
+        'SKM= sensor KM binar sensor format',...
+        'MWC= Multibeam water column datagram', ...
+        'SVT= sensor data for sound velocity at transducer',...
+        'CHE= Compatibility data for heave',...
+        'SPO= sensor data for position',...
+        'CPO= Compatibility data for position',...
+        'MRZ= Multibeam raw range and depth datagram',...
+        'SCL= sensor data from clock'};
+    %infolabels
 
-if sscanf(version('-release'),'%d')>2019
-text(datalabelpos*ones(size(yticklabels)),b1(1).XEndPoints,datalabels,'VerticalAlignment','middle')
-%text(2000*ones(size(yticklabels)),b1(1).XEndPoints,infolabels,'VerticalAlignment','middle')
-else
-text(datalabelpos*ones(size(yticklabels)),b1(1).XData,datalabels,'VerticalAlignment','middle')
-%text(2000*ones(size(yticklabels)),b1(1).XData,infolabels,'VerticalAlignment','middle')
-end
+    if sscanf(version('-release'),'%d')>2019
+    text(datalabelpos*ones(size(yticklabels)),b1(1).XEndPoints,datalabels,'VerticalAlignment','middle')
+    %text(2000*ones(size(yticklabels)),b1(1).XEndPoints,infolabels,'VerticalAlignment','middle')
+    else
+    text(datalabelpos*ones(size(yticklabels)),b1(1).XData,datalabels,'VerticalAlignment','middle')
+    %text(2000*ones(size(yticklabels)),b1(1).XData,infolabels,'VerticalAlignment','middle')
+    end
+end % describe_datagrams
 
 %% now we want to read some datagrams and figure out what to do with the data!
 % this should read all the data
@@ -193,6 +218,7 @@ dgmNum=zeros(Ndgm,1);
 posixtimes=zeros(Ndgm,1);
 pingcount=zeros(Ndgm,1);
 tnanosec=zeros(Ndgm,1);
+ckNrx=zeros(Ndgm,1);
 for i=1:Ndgm
     dgmtimes(i)=datetime(wcdat(i).header.time_sec,'ConvertFrom','posixtime');
     posixtimes(i)=wcdat(i).header.time_sec;
@@ -200,30 +226,44 @@ for i=1:Ndgm
     numOfDgms(i)= wcdat(i).partition.numOfDgms;
     dgmNum(i)= wcdat(i).partition.dgmNum;
     pingcount(i)=wcdat(i).cmnPart.pingCnt;
+    ckNrx(i)=wcdat(i).rxInfo.numBeams;
 end
-figure(5)
-subplot(211)
-plot(dgmtimes,numOfDgms,'p',dgmtimes,dgmNum)
-subplot(212)
-plot(dgmtimes,pingcount)
-fprintf('first ping count = %d\n',pingcount(1))
-fprintf('last ping count = %d\n',pingcount(end))
-fprintf('total counts = %d\n',pingcount(end)-pingcount(1)+1)
+if abs(mean(diff(ckNrx)))>0
+    fprintf('WARNING: inconsistent number of beams across datagrams\n')
+end
+if check_dgmtimes
+    figure(5)
+    subplot(211)
+    plot(dgmtimes,numOfDgms,'p',dgmtimes,dgmNum)
+    subplot(212)
+    plot(dgmtimes,pingcount)
+    
+    fprintf('first ping count = %d\n',pingcount(1))
+    fprintf('last ping count = %d\n',pingcount(end))
+    fprintf('total counts = %d\n',pingcount(end)-pingcount(1)+1)
+end
 
 %% section loop over pings out
 % if numOfDgms always 1, can just proceed
 % assuming this for now
 
+% setting these above now
 % setting a fixed watercolumn buffer in meters
-maxWCSampIdx = 600;
-
+%   maxWCSampIdx = 600;
 % setting receive beamwidth arbitrarily (need to find where to read)
-RxBeamWidth=1;
-
+%   RxBeamWidth=1;
 % setting velocity for along track direction
-cartspeed=0.34;
+%   cartspeed=0.34;
 
-%dgmtime=NaT(num,1); would create empty 
+%dgmtime=NaT(num,1); would create empty datetime array
+YY=zeros(ckNrx(1),maxWCSampIdx,Ndgm);
+ZZ=zeros(ckNrx(1),maxWCSampIdx,Ndgm);
+SV=zeros(ckNrx(1),maxWCSampIdx,Ndgm);
+TT=zeros(ckNrx(1),maxWCSampIdx,Ndgm);
+XX=zeros(ckNrx(1),maxWCSampIdx,Ndgm);
+xBottom=zeros(Ndgm,ckNrx(1));
+dTime=zeros(Ndgm,1);
+
 for idgm=1:Ndgm  % just do the first ping for now
     %fprintf('reading %d-th ping now\n',idgm)
     % header
@@ -359,33 +399,33 @@ for idgm=1:Ndgm  % just do the first ping for now
         else
             nadir_idx = nadir_idx - 1;
         end
-                     figure(1)
-                     subplot(211)
-                     pcolor(y,z,TS); 
-                        shading flat; axis equal; 
-                        set(gca,'ydir','reverse');
-                     set(gca,'fontname','Times'); 
-                        caxis([-140 -60]); colorbar
-                     title(['Ping ' num2str(pingidx) ': TS'])
-                     ylim([0 6])
-                     hold on
-                     plot(yBottom(pingidx,:),zBottom(pingidx,:),'r.')
-                     hold off 
-                     
-                     subplot(212)
-                     pcolor(y,z,Sv); 
-                        shading flat; axis equal; 
-                        set(gca,'ydir','reverse');
-                     set(gca,'fontname','Times'); 
-                        caxis([-140 -60]); colorbar
-                     title(['Ping ' num2str(pingidx) ' :Sv'])
-                     hold on
-                     plot(yBottom(pingidx,:),zBottom(pingidx,:),'r.')
-                     ylim([0 6])
-                     hold off
-    %                 drawnow
-    % %                 plot(y(bin_idx),z(bin_idx),'rs')
-    %                 pause(0.05)
+        
+        if vizping
+             figure(1)
+             subplot(211)
+             pcolor(y,z,TS); 
+                shading flat; axis equal; 
+                set(gca,'ydir','reverse');
+             set(gca,'fontname','Times'); 
+                caxis([-140 -60]); colorbar
+             title(['Ping ' num2str(pingidx) ': TS'])
+             ylim([0 6])
+             hold on
+             plot(yBottom(pingidx,:),zBottom(pingidx,:),'r.')
+             hold off 
+
+             subplot(212)
+             pcolor(y,z,Sv); 
+                shading flat; axis equal; 
+                set(gca,'ydir','reverse');
+             set(gca,'fontname','Times'); 
+                caxis([-140 -60]); colorbar
+             title(['Ping ' num2str(pingidx) ' :Sv'])
+             hold on
+             plot(yBottom(pingidx,:),zBottom(pingidx,:),'r.')
+             ylim([0 6])
+             hold off
+        end % vizping
 
     %    cut_Sv  = Sv(:,1:nadir_idx);
     %    cut_y   = y(:,1:nadir_idx);
@@ -423,22 +463,82 @@ for idgm=1:Ndgm  % just do the first ping for now
     %pause
 end
 
-%% plot along track profile
-thisbeam=150;
-figure(2)
+%% summary visualizations
+if do3Dviz
+    pingtoplot=Ndgm/2; % 180
+    thisbeam=150; % 150
+   
+%plot along track profile
+figure(6)
 pcolor(squeeze(XX(thisbeam,:,:)),squeeze(ZZ(thisbeam,:,:)),squeeze(TT(thisbeam,:,:)))
 shading flat
 set(gca,'ydir','reverse');
 set(gca,'fontname','Times'); 
-clim([-140 -40]); colorbar
-title(['end Ping ' num2str(pingidx) ' :Sv'])
+if sscanf(version('-release'),'%d')<2022
+    caxis([-140 -40]); colorbar
+else
+    clim([-140 -40]); colorbar    
+end
+title(['end Ping ' num2str(pingidx) ' :TS'])
+hold on
+ plot(xBottom(:,thisbeam),zBottom(:,thisbeam),'r.')
+ plot(xBottom(pingtoplot,thisbeam).*ones(2,1),[0 6],'k')
+ ylim([0 6])
+hold off
+
+figure(7)
+pcolor(squeeze(XX(thisbeam,:,:)),squeeze(ZZ(thisbeam,:,:)),squeeze(SV(thisbeam,:,:)))
+shading flat
+set(gca,'ydir','reverse');
+set(gca,'fontname','Times'); 
+if sscanf(version('-release'),'%d')<2022
+    caxis([-140 -40]); colorbar
+else
+    clim([-140 -40]); colorbar    
+end
+title(['end Ping ' num2str(pingidx) ' :SV'])
 hold on
  plot(xBottom(:,thisbeam),zBottom(:,thisbeam),'r.')
  ylim([0 6])
 hold off
 
+% plot a summary of pings
+figure(8)
+pcolor(mean(YY(:,:,Ndgm/2:3*Ndgm/4),3),...
+    mean(ZZ(:,:,Ndgm/2:3*Ndgm/4),3),mean(TT(:,:,Ndgm/2:3*Ndgm/4),3))
+shading flat
+set(gca,'ydir','reverse');
+set(gca,'fontname','Times'); 
+if sscanf(version('-release'),'%d')<2022
+    caxis([-140 -40]); colorbar
+else
+    clim([-140 -40]); colorbar    
+end
+title(['end Ping ' num2str(pingidx) ' :Sv'])
+hold on
+ plot(mean(yBottom,1),mean(zBottom,1),'r.')
+ ylim([0 6])
+hold off
 
-%figure(3)
+% plot a specific ping
+figure(9)
+pcolor(YY(:,:,pingtoplot),ZZ(:,:,pingtoplot),TT(:,:,pingtoplot))
+shading flat
+set(gca,'ydir','reverse');
+set(gca,'fontname','Times'); 
+if sscanf(version('-release'),'%d')<2022
+    caxis([-140 -40]); colorbar
+else
+    clim([-140 -40]); colorbar    
+end
+title(['end Ping ' num2str(pingidx) ' :Sv'])
+hold on
+ plot(mean(yBottom,1),mean(zBottom,1),'r.')
+ plot(YY(thisbeam,:,pingtoplot),ZZ(thisbeam,:,pingtoplot),'k')
+ ylim([0 6])
+hold off
+
+%figure(10)
 %p = patch(isosurface(XX,YY,ZZ,SV,-80));
 %isonormals(XX,YY,ZZ,SV,p)
 %p.FaceColor = 'red';
@@ -447,11 +547,15 @@ hold off
 %view(3); 
 %axis tight
 %camlight 
-%lighting gouraud
+%lighting 
+
+end % do3Dviz
 
 %% save files
 
-outdir='../MBES_mat_data/';
+if savefiles
+
+% outdir='../MBES_mat_data/'; % moving to top
 datafile=filename(1:end-5);
 outmatfile=fullfile(outdir,[datafile 'mat']);
 outvizfile=fullfile(outdir,[datafile(1:end-1) '_viz.mat']);
@@ -459,12 +563,18 @@ fprintf('saving to file %s \n',outmatfile)
 save(outmatfile,'wcdat')
 save(outvizfile,'XX','YY','ZZ','SV','TT','xBottom','yBottom','zBottom','dTime');
 
+end % savefiles
 
 fclose(fid);
             
 return
 % every thing beyond here is Liz's - mostly using as guide to which
 % datagrams are needed and other steps
+%********************************************************************
+%********************************************************************
+%********************************************************************
+%********************************************************************
+%********************************************************************
 %********************************************************************
 
 %% start reading data file
