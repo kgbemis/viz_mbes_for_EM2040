@@ -5,8 +5,8 @@
 
 %% open an EM data file 
 
-%filelocation = '../MBES_raw_data/';
-filelocation = 'e:UNH_tank_experiment\EM2040\UNH_EM2040_40_Apr_13_2023\';
+filelocation = '../MBES_raw_data/';
+%filelocation = 'e:UNH_tank_experiment\EM2040\UNH_EM2040_40_Apr_13_2023\';
 %filelocation = 'e:UNH_tank_experiment\EM2040\UNH_EM2040_40_Apr2023_geoA\';
 %filename='0009_20200918_094230.kmall';
 %filename='0010_20200918_095915.kmall';
@@ -38,7 +38,7 @@ filelocation = 'e:UNH_tank_experiment\EM2040\UNH_EM2040_40_Apr_13_2023\';
 %filename='0026_20230413_174909.kmwcd'; % apr13-? flow-? kHz
 %filename='0027_20230413_175000.kmwcd'; titlestr='apr13-B-? flow-200kHz';
 %filename='0053_20230413_181816.kmwcd';
-filename='0077_20230413_190346.kmwcd';
+%filename='0077_20230413_190346.kmwcd';
 %filename='0078_20230413_190400.kmwcd';
 %filename='0079_20230413_190422.kmwcd';
 %filename='0081_20230413_190450.kmwcd';
@@ -46,6 +46,11 @@ filename='0077_20230413_190346.kmwcd';
 
 %filename='0024_20230414_163451.kmwcd'; % geoA 400hz
 %filename='0023_20230414_163427.kmwcd'; 
+
+%filename='0008_20230415_124857.kmwcd';
+%filename='0000_20230415_193500.kmwcd';
+filename='0003_20230415_200249.kmwcd';
+%filename='0004_20230415_204544.kmwcd';
 
 fname = fullfile(filelocation,filename);
 fprintf('reading file: %s \n',fname)
@@ -138,6 +143,7 @@ yticklabels(KMALLfileinfo.list_dgm_type)
 ylabel('Datagram Types')
 xlabel('Counts')
 datalabels=string(b1(1).YData);
+datalabelpos=max(KMALLfileinfo.list_dgm_counter)+2;
 potdatalabels={'IIP','IOP','SVP','SKM','MWC','SVT','CHE'};
 fullinfolabellist={'IIP=Installation parameters and sensor setup',...
     'IOP= Runtime parameters as chosen by operator',...
@@ -153,10 +159,10 @@ fullinfolabellist={'IIP=Installation parameters and sensor setup',...
 %infolabels
 
 if sscanf(version('-release'),'%d')>2019
-text(200*ones(size(yticklabels)),b1(1).XEndPoints,datalabels,'VerticalAlignment','middle')
+text(datalabelpos*ones(size(yticklabels)),b1(1).XEndPoints,datalabels,'VerticalAlignment','middle')
 %text(2000*ones(size(yticklabels)),b1(1).XEndPoints,infolabels,'VerticalAlignment','middle')
 else
-text(200*ones(size(yticklabels)),b1(1).XData,datalabels,'VerticalAlignment','middle')
+text(datalabelpos*ones(size(yticklabels)),b1(1).XData,datalabels,'VerticalAlignment','middle')
 %text(2000*ones(size(yticklabels)),b1(1).XData,infolabels,'VerticalAlignment','middle')
 end
 
@@ -186,9 +192,11 @@ numOfDgms=zeros(Ndgm,1);
 dgmNum=zeros(Ndgm,1);
 posixtimes=zeros(Ndgm,1);
 pingcount=zeros(Ndgm,1);
+tnanosec=zeros(Ndgm,1);
 for i=1:Ndgm
     dgmtimes(i)=datetime(wcdat(i).header.time_sec,'ConvertFrom','posixtime');
     posixtimes(i)=wcdat(i).header.time_sec;
+    tnanosec(i)=wcdat(i).header.time_nanosec;
     numOfDgms(i)= wcdat(i).partition.numOfDgms;
     dgmNum(i)= wcdat(i).partition.dgmNum;
     pingcount(i)=wcdat(i).cmnPart.pingCnt;
@@ -221,7 +229,8 @@ for idgm=1:Ndgm  % just do the first ping for now
     % header
         % time coming from datagram header - already pulled
         %dgmtime(idgm)=datetime(wcdat(idgm).header.dgtime,'ConvertFrom','posixtime');
-        thistime=dgmtimes(idgm);
+        %thistime=second(dgmtimes(idgm))+tnanosec(idgm)/1e9;
+        thistime=posixtimes(idgm)+tnanosec(idgm)/1e9;
     % partition - has the datagram number and split info
     DatagramNum=wcdat(idgm).partition.dgmNum;
     NumDatagrams=wcdat(idgm).partition.numOfDgms;
@@ -272,8 +281,9 @@ for idgm=1:Ndgm  % just do the first ping for now
         pingidx = idgm;  % since we know ping numbers, just set rather than counting
 
         pingTime(pingidx) = thistime;    % datetime
-        %elapsedsec=seconds(pingTime(idgm)-pingTime(1));
-        elapsedsec=posixtimes(idgm)-posixtimes(1);
+        %elapsedsec=second(pingTime(idgm)-pingTime(1));
+        elapsedsec=pingTime(idgm)-pingTime(1);
+        %elapsedsec=posixtimes(idgm)-posixtimes(1);
 
         %size(beamAmp)
         %size(zeros(Nrx,maxWCSampIdx-length(beamAmp(1,:)))-999)
@@ -413,13 +423,14 @@ for idgm=1:Ndgm  % just do the first ping for now
     %pause
 end
 
+%% plot along track profile
 thisbeam=150;
 figure(2)
-pcolor(squeeze(XX(thisbeam,:,:)),squeeze(ZZ(thisbeam,:,:)),squeeze(SV(thisbeam,:,:)))
+pcolor(squeeze(XX(thisbeam,:,:)),squeeze(ZZ(thisbeam,:,:)),squeeze(TT(thisbeam,:,:)))
 shading flat
 set(gca,'ydir','reverse');
 set(gca,'fontname','Times'); 
-clim([-100 -40]); colorbar
+clim([-140 -40]); colorbar
 title(['end Ping ' num2str(pingidx) ' :Sv'])
 hold on
  plot(xBottom(:,thisbeam),zBottom(:,thisbeam),'r.')
@@ -437,6 +448,8 @@ hold off
 %axis tight
 %camlight 
 %lighting gouraud
+
+%% save files
 
 outdir='../MBES_mat_data/';
 datafile=filename(1:end-5);
