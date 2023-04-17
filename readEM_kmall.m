@@ -7,7 +7,7 @@
 % sonar parameters
 maxWCSampIdx = 600; % setting a fixed watercolumn buffer in meters
 RxBeamWidth=1; % setting receive beamwidth arbitrarily (need to find where to read)
-cartspeed=0.34; % setting velocity for along track direction
+cartspeed=0.05; % setting velocity for along track direction (0.34 max at UNH)
 
 % operations choices
 dotest=1;
@@ -19,11 +19,11 @@ do3Dviz=1;
 savefiles=1;
 
 outdir='../MBES_mat_files/';
-
+expcode='geoA_Apr15_single_15Hz_slow_hot';
 
 %% open an EM data file 
 
-filelocation = '../MBES_raw_data/';
+filelocation = ['../MBES_raw_data/' expcode '/'];
 %filelocation = 'e:UNH_tank_experiment\EM2040\UNH_EM2040_40_Apr_13_2023\';
 %filelocation = 'e:UNH_tank_experiment\EM2040\UNH_EM2040_40_Apr2023_geoA\';
 %filename='0009_20200918_094230.kmall';
@@ -57,7 +57,7 @@ filelocation = '../MBES_raw_data/';
 %filename='0026_20230413_174909.kmwcd'; % apr13-? flow-? kHz
 %filename='0027_20230413_175000.kmwcd'; titlestr='apr13-B-? flow-200kHz';
 %filename='0053_20230413_181816.kmwcd';
-filename='0075_20230414_193631.kmwcd'; % Liz got plume but I don't :-(
+%filename='0075_20230414_193631.kmwcd'; % Liz got plume but I don't :-(
 %filename='0077_20230413_190346.kmwcd';
 %filename='0078_20230413_190400.kmwcd';
 %filename='0079_20230413_190422.kmwcd';
@@ -67,10 +67,20 @@ filename='0075_20230414_193631.kmwcd'; % Liz got plume but I don't :-(
 %filename='0024_20230414_163451.kmwcd'; % geoA 400hz
 %filename='0023_20230414_163427.kmwcd'; 
 
-%filename='0008_20230415_124857.kmwcd';
-%filename='0000_20230415_193500.kmwcd';
+%filename='0000_20230415_123519.kmwcd'; % geoA hot slow 200Hz
+%filename='0001_20230415_123600.kmwcd'; % geoA hot slow 200Hz
+% no 0002 file
+%filename='0003_20230415_124320.kmwcd'; % geoA hot slow 200Hz
+%filename='0004_20230415_124403.kmwcd'; % geoA hot slow 200Hz
+%filename='0005_20230415_124611.kmwcd'; % geoA hot slow 300Hz
+filename='0006_20230415_124653.kmwcd'; % geoA hot slow 300Hz
+%filename='0007_20230415_124807.kmwcd'; % geoA hot slow 400Hz
+%filename='0008_20230415_124857.kmwcd'; % geoA hot slow 400Hz
+
+%filename='0000_20230415_193500.kmwcd'; % calibration 
 %filename='0003_20230415_200249.kmwcd';
 %filename='0004_20230415_204544.kmwcd';
+
 
 fname = fullfile(filelocation,filename);
 fprintf('reading file: %s \n',fname)
@@ -481,8 +491,8 @@ end
 
 %% summary visualizations
 if do3Dviz
-    pingtoplot=Ndgm/2; % 180
-    thisbeam=150; % 150
+    pingtoplot=fix(Ndgm/2); % 180
+    thisbeam=128; % 150
    
 %plot along track profile
 figure(6)
@@ -520,8 +530,9 @@ hold off
 
 % plot a summary of pings
 figure(8)
-pcolor(mean(YY(:,:,Ndgm/2:3*Ndgm/4),3),...
-    mean(ZZ(:,:,Ndgm/2:3*Ndgm/4),3),mean(TT(:,:,Ndgm/2:3*Ndgm/4),3))
+pcolor(mean(YY(:,:,fix(Ndgm/2):ceil(3*Ndgm/4)),3),...
+    mean(ZZ(:,:,fix(Ndgm/2):ceil(3*Ndgm/4)),3),...
+    mean(TT(:,:,fix(Ndgm/2):ceil(3*Ndgm/4)),3))
 shading flat
 set(gca,'ydir','reverse');
 set(gca,'fontname','Times'); 
