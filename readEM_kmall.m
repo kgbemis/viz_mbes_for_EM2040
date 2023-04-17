@@ -18,7 +18,7 @@ vizping=1;
 do3Dviz=1;
 savefiles=1;
 
-outdir='../MBES_mat_data/';
+outdir='../MBES_mat_files/';
 
 
 %% open an EM data file 
@@ -31,7 +31,7 @@ filelocation = '../MBES_raw_data/';
 %filename='0004_20230406_123411.kmall'; % apr 6 - flow setup issues
 %filename='0004_20230406_123411.kmwcd';  %   too long (3407 pings) to read 
                                         %   in one gulp
-filename='0017_20230405_163521.kmwcd'; % apr 5 - hot flow good
+%filename='0017_20230405_163521.kmwcd'; % apr 5 - hot flow good
 %filename='0005_20230413_141335.kmwcd';
 %filename='0006_20230413_143146.kmwcd';
 %filename='0007_20230413_143346.kmwcd';
@@ -57,7 +57,7 @@ filename='0017_20230405_163521.kmwcd'; % apr 5 - hot flow good
 %filename='0026_20230413_174909.kmwcd'; % apr13-? flow-? kHz
 %filename='0027_20230413_175000.kmwcd'; titlestr='apr13-B-? flow-200kHz';
 %filename='0053_20230413_181816.kmwcd';
-%filename='0075_20230414_193631.kmwcd'; % Liz got plume but I don't :-(
+filename='0075_20230414_193631.kmwcd'; % Liz got plume but I don't :-(
 %filename='0077_20230413_190346.kmwcd';
 %filename='0078_20230413_190400.kmwcd';
 %filename='0079_20230413_190422.kmwcd';
