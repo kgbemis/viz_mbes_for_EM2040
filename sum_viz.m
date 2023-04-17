@@ -1,8 +1,8 @@
-function sum_viz(filecode,pingtoplot,thisbeam,doprint,printstr)
+function sum_viz(filecode,pingtoplot,thisbeam,doprint,printstr,svclims,tsclims)
 % visualize MBES data that has already been read from the .kmwcd data files
 
 % load data for summary visualization
-datadir='..\MBES_mat_data\';
+datadir='..\MBES_mat_files\';
 vizdat=load(fullfile(datadir,[filecode '_viz.mat ']));
     XX=vizdat.XX;
     YY=vizdat.YY;
@@ -31,6 +31,12 @@ if isempty(thisbeam)
     thisbeam=150; 
 end
 fprintf('plotting ping %d and beam %d \n',pingtoplot,thisbeam)
+if isempty(svclims)
+    svclims=[-140 -40];
+end
+if isempty(tsclims)
+    tsclims=[-140 -40];
+end
    
 %plot along track profile
 f6=figure(6);
@@ -80,9 +86,9 @@ shading flat
 set(gca,'ydir','reverse');
 set(gca,'fontname','Times'); 
 if sscanf(version('-release'),'%d')<2022
-    caxis([-130 -90]); colorbar
+    caxis(tsclims); colorbar
 else
-    clim([-130 -90]); colorbar    
+    clim(tsclims); colorbar    
 end
 title(['run ' fileinfo{1} ': starts at ' startstr ': average Ping return: TS'])
 hold on
@@ -102,9 +108,9 @@ shading flat
 set(gca,'ydir','reverse');
 set(gca,'fontname','Times'); 
 if sscanf(version('-release'),'%d')<2022
-    caxis([-130 -90]); colorbar
+    caxis(svclims); colorbar
 else
-    clim([-130 -90]); colorbar    
+    clim(svclims); colorbar    
 end
 title(['run ' fileinfo{1} ': starts at ' startstr ': average Ping return: SV'])
 hold on
