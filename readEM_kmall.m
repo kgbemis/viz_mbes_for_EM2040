@@ -19,7 +19,8 @@ do3Dviz=1;
 savefiles=1;
 
 outdir='../MBES_mat_files/';
-expcode='geoA_Apr15_single_15Hz_slow_hot';
+%expcode='geoA_Apr15_single_15Hz_slow_hot';
+expcode='';
 
 %% open an EM data file 
 
@@ -56,6 +57,10 @@ filelocation = ['../MBES_raw_data/' expcode '/'];
 %filename='0025_20230413_172618.kmwcd'; % apr13-B-
 %filename='0026_20230413_174909.kmwcd'; % apr13-? flow-? kHz
 %filename='0027_20230413_175000.kmwcd'; titlestr='apr13-B-? flow-200kHz';
+% try 46 (geoC 400kHz looks like good plume)
+%filename='0046_20230413_180331.kmwcd';
+% try 48
+%filename='0048_20230413_180417.kmwcd';
 %filename='0053_20230413_181816.kmwcd';
 %filename='0075_20230414_193631.kmwcd'; % Liz got plume but I don't :-(
 %filename='0077_20230413_190346.kmwcd';
@@ -66,6 +71,8 @@ filelocation = ['../MBES_raw_data/' expcode '/'];
 
 %filename='0024_20230414_163451.kmwcd'; % geoA 400hz
 %filename='0023_20230414_163427.kmwcd'; 
+filename='0046_20230414_175425.kmwcd';
+%filename='0048_20230414_175530.kmwcd';
 
 %filename='0000_20230415_123519.kmwcd'; % geoA hot slow 200Hz
 %filename='0001_20230415_123600.kmwcd'; % geoA hot slow 200Hz
@@ -73,7 +80,7 @@ filelocation = ['../MBES_raw_data/' expcode '/'];
 %filename='0003_20230415_124320.kmwcd'; % geoA hot slow 200Hz
 %filename='0004_20230415_124403.kmwcd'; % geoA hot slow 200Hz
 %filename='0005_20230415_124611.kmwcd'; % geoA hot slow 300Hz
-filename='0006_20230415_124653.kmwcd'; % geoA hot slow 300Hz
+%filename='0006_20230415_124653.kmwcd'; % geoA hot slow 300Hz
 %filename='0007_20230415_124807.kmwcd'; % geoA hot slow 400Hz
 %filename='0008_20230415_124857.kmwcd'; % geoA hot slow 400Hz
 
