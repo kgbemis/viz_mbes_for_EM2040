@@ -58,6 +58,7 @@ filelocation = '../MBES_raw_data/';
 %filename='0027_20230413_175000.kmwcd'; titlestr='apr13-B-? flow-200kHz';
 %filename='0053_20230413_181816.kmwcd';
 filename='0075_20230414_193631.kmwcd'; % Liz got plume but I don't :-(
+filename2='0075_20230414_193631.kmall'; % Liz got plume but I don't :-(
 %filename='0077_20230413_190346.kmwcd';
 %filename='0078_20230413_190400.kmwcd';
 %filename='0079_20230413_190422.kmwcd';
@@ -194,9 +195,25 @@ end % describe_datagrams
 %% now we want to read some datagrams and figure out what to do with the data!
 % this should read all the data
 KMALLdata = CFF_read_kmall(fname);
+% 5/31/23 - try making a cell with both .kmwcd and .kmall names
+%fnamepair{1,1}=fname;
+%fnamepair{2,1}=fname2;
+%KMALLdata = CFF_read_kmall(fnamepair);
+% the second version will only work if I upgrade the version to higher than
+% 2020a
 
 % now have a set of stuctures in KMALLdata that contain the datagrams for
 % each type plus an info strucure
+
+%% get the non-water column information
+
+if ~isempty(filename2)
+    fname2 = fullfile(filelocation,filename2);
+    KMALLdata2 = CFF_read_kmall(fname2);
+
+end % isempty 
+
+%% start parsing out the water column data
 
 wcdat=KMALLdata.EMdgmMWC;  % water column data
 
@@ -567,23 +584,27 @@ hold off
 
 end % do3Dviz
 
+
 %% save files
 
 if savefiles
 
 % outdir='../MBES_mat_data/'; % moving to top
-datafile=filename(1:end-5);
-outmatfile=fullfile(outdir,[datafile 'mat']);
-outvizfile=fullfile(outdir,[datafile(1:end-1) '_viz.mat']);
+datafile=filename(1:end-6);
+source=filename(end-4:end);
+outmatfile=fullfile(outdir,[datafile '_' source '.mat']);
+outvizfile=fullfile(outdir,[datafile '_' source '_viz.mat']);
+outallstruct=fullfile(outdir,[datafile '_bothstructs.mat']);
 fprintf('saving to file %s \n',outmatfile)
 save(outmatfile,'wcdat')
 save(outvizfile,'XX','YY','ZZ','SV','TT','xBottom','yBottom','zBottom','dTime');
-
+save(outallstruct,'KMALLdata','KMALLdata2')
 end % savefiles
 
 fclose(fid);
-            
+
 return
+%%
 % every thing beyond here is Liz's - mostly using as guide to which
 % datagrams are needed and other steps
 %********************************************************************
