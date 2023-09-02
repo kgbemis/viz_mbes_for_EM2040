@@ -51,7 +51,8 @@ set(gca,'fontname','Times');
 if sscanf(version('-release'),'%d')<2022
     caxis([-140 -40]); colorbar
 else
-    clim([-140 -40]); colorbar    
+    %clim([-140 -40]); colorbar    
+    clim(tsclims); colorbar    
 end
 title(['run ' fileinfo{1} ': starts at ' startstr ': TS'])
 hold on
@@ -70,7 +71,8 @@ set(gca,'fontname','Times');
 if sscanf(version('-release'),'%d')<2022
     caxis([-140 -40]); colorbar
 else
-    clim([-140 -40]); colorbar    
+    %clim([-140 -40]); colorbar    
+    clim(svclims); colorbar    
 end
 title(['run ' fileinfo{1} ': starts at ' startstr ': SV'])
 hold on
