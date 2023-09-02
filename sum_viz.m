@@ -1,5 +1,8 @@
 function sum_viz(filecode,pingtoplot,thisbeam,doprint,printstr,svclims,tsclims)
 % visualize MBES data that has already been read from the .kmwcd data files
+%
+%   filecode = <kmwcd or kmall base filename>_kmwcd
+%
 
 % load data for summary visualization
 datadir='..\MBES_mat_files\';
