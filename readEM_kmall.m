@@ -312,13 +312,15 @@ ylabel('sector number')
 %   RxBeamWidth=1;
 % setting velocity for along track direction
 %   cartspeed=0.34;
+numSamps1=wcdat(1).beamData_p.numSampleData; % not sure this is correct
+maxWCSampIdx1=numSamps1(1);
 
 %dgmtime=NaT(num,1); would create empty datetime array
-YY=zeros(ckNrx(1),maxWCSampIdx,Ndgm);
-ZZ=zeros(ckNrx(1),maxWCSampIdx,Ndgm);
-SV=zeros(ckNrx(1),maxWCSampIdx,Ndgm);
-TT=zeros(ckNrx(1),maxWCSampIdx,Ndgm);
-XX=zeros(ckNrx(1),maxWCSampIdx,Ndgm);
+YY=zeros(ckNrx(1),maxWCSampIdx1,Ndgm);
+ZZ=zeros(ckNrx(1),maxWCSampIdx1,Ndgm);
+SV=zeros(ckNrx(1),maxWCSampIdx1,Ndgm);
+TT=zeros(ckNrx(1),maxWCSampIdx1,Ndgm);
+XX=zeros(ckNrx(1),maxWCSampIdx1,Ndgm);
 xBottom=zeros(Ndgm,ckNrx(1));
 dTime=zeros(Ndgm,1);
 
@@ -509,11 +511,11 @@ for idgm=1:Ndgm  % just do the first ping for now
     %    z_nadir(pingidx) = zBottom(nadir_idx);
     %    Sv_mmax(pingidx,:) = test_mmax;
 
-    YY(:,:,idgm)=y(:,1:600);
-    ZZ(:,:,idgm)=z(:,1:600);
-    SV(:,:,idgm)=Sv(:,1:600);
-    TT(:,:,idgm)=TS(:,1:600);
-    XX(:,:,idgm)=cartspeed*elapsedsec*ones(256,600);
+    YY(:,:,idgm)=y(:,1:maxWCSampIdx1);
+    ZZ(:,:,idgm)=z(:,1:maxWCSampIdx1);
+    SV(:,:,idgm)=Sv(:,1:maxWCSampIdx1);
+    TT(:,:,idgm)=TS(:,1:maxWCSampIdx1);
+    XX(:,:,idgm)=cartspeed*elapsedsec*ones(256,maxWCSampIdx1);
     xBottom(idgm,:)=cartspeed*elapsedsec*ones(1,256);
     dTime(idgm)=elapsedsec;
 
