@@ -94,9 +94,10 @@ filelocation = ['../MBES_raw_data/' expcode '/'];
 
 %filename='0000_20230415_193500.kmwcd'; % calibration 
 %filename='0003_20230415_200249.kmwcd';
-filename='0004_20230415_204544.kmwcd';
-filename2='0004_20230415_204544.kmall';
-
+%filename='0004_20230415_204544.kmwcd'; % test file for student work
+%ilename2='0004_20230415_204544.kmall';
+filename='0017_20230405_163521.kmwcd'; % apr13-B-cold flow-200 kHz
+filename2='0017_20230405_163521.kmall'; 
 
 fname = fullfile(filelocation,filename);
 fprintf('reading file: %s \n',fname)
