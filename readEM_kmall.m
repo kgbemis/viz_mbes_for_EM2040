@@ -79,7 +79,7 @@ filelocation = ['../MBES_raw_data/' expcode '/'];
 
 %filename='0024_20230414_163451.kmwcd'; % geoA 400hz
 %filename='0023_20230414_163427.kmwcd'; 
-filename='0046_20230414_175425.kmwcd';
+%filename='0046_20230414_175425.kmwcd';
 %filename='0048_20230414_175530.kmwcd';
 
 %filename='0000_20230415_123519.kmwcd'; % geoA hot slow 200Hz
