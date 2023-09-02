@@ -5,7 +5,14 @@
 
 %% manual entry of parameters
 % sonar parameters
-maxWCSampIdx = 600; % setting a fixed watercolumn buffer in meters
+%maxWCSampIdx = 1060; % setting a fixed watercolumn buffer in meters 
+%           (this is 600 in Liz's code)
+%       maxWCSampIdx needs to be set for the particular data set
+%       outer beams should have maximum number of samples based on plotted
+%       patterns for number of samples so can use the following after
+%       metadata is read:
+%           numSamps=wcdat(idgm).beamData_p.numSampleData;
+%           maxWCSampIdx=numSamps(1);
 RxBeamWidth=1; % setting receive beamwidth arbitrarily (need to find where to read)
 cartspeed=0.34; % setting velocity for along track direction
 
@@ -15,7 +22,7 @@ describe_datagrams=1;
 % always reads kmall file info and kmwcd data
 check_dgmtimes=1; % always computes times, this just controls plots
 vizping=1;
-do3Dviz=1;
+do3Dviz=0;
 savefiles=1;
 
 outdir='../MBES_mat_files/';
@@ -57,8 +64,8 @@ filelocation = '../MBES_raw_data/';
 %filename='0026_20230413_174909.kmwcd'; % apr13-? flow-? kHz
 %filename='0027_20230413_175000.kmwcd'; titlestr='apr13-B-? flow-200kHz';
 %filename='0053_20230413_181816.kmwcd';
-filename='0075_20230414_193631.kmwcd'; % Liz got plume but I don't :-(
-filename2='0075_20230414_193631.kmall'; % Liz got plume but I don't :-(
+%filename='0075_20230414_193631.kmwcd'; % Liz got plume but I don't :-(
+%filename2='0075_20230414_193631.kmall'; % Liz got plume but I don't :-(
 %filename='0077_20230413_190346.kmwcd';
 %filename='0078_20230413_190400.kmwcd';
 %filename='0079_20230413_190422.kmwcd';
@@ -71,7 +78,8 @@ filename2='0075_20230414_193631.kmall'; % Liz got plume but I don't :-(
 %filename='0008_20230415_124857.kmwcd';
 %filename='0000_20230415_193500.kmwcd';
 %filename='0003_20230415_200249.kmwcd';
-%filename='0004_20230415_204544.kmwcd';
+filename='0004_20230415_204544.kmwcd';
+filename2='0004_20230415_204544.kmall';
 
 fname = fullfile(filelocation,filename);
 fprintf('reading file: %s \n',fname)
@@ -333,6 +341,7 @@ for idgm=1:Ndgm  % just do the first ping for now
         %RxBeamWidth=wcdat(iping).rxInfo.nothere    beamAngle=wcdat(i).beamData_p.beamPointAngReVertical_deg;
     startRangeSampNum=wcdat(idgm).beamData_p.startRangeSampleNum;
     numSamps=wcdat(idgm).beamData_p.numSampleData; % not sure this is correct
+    maxWCSampIdx=numSamps(1);
     xmitSectNum=wcdat(idgm).beamData_p.beamTxSectorNum;
     %beamNum=wcdat(i).beamData_p.?  ask Liz what this is
     %beamAmp - need to read from binary file still
