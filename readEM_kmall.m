@@ -307,21 +307,32 @@ ylabel('sector number')
 % assuming this for now
 
 % setting these above now
-% setting a fixed watercolumn buffer in meters
+% setting a fixed watercolumn buffer
 %   maxWCSampIdx = 600;
 % setting receive beamwidth arbitrarily (need to find where to read)
 %   RxBeamWidth=1;
 % setting velocity for along track direction
 %   cartspeed=0.34;
+
+% need to know buffer size in order to do all setup
 numSamps1=wcdat(1).beamData_p.numSampleData; % not sure this is correct
 maxWCSampIdx1=numSamps1(1);
+    fprintf('number samples (ping 1, beam 1) = %d\n',maxWCSampIdx1)
+maxSamps=zeros(Ndgm,1);
+for i=1:Ndgm
+    numSamps=wcdat(i).beamData_p.numSampleData;
+    maxSamps(i)=max(numSamps);
+end
+maxWCSampIdx=max(maxSamps);
+    fprintf('maximum number samples = %d\n',maxWCSampIdx)
+
 
 %dgmtime=NaT(num,1); would create empty datetime array
-YY=zeros(ckNrx(1),maxWCSampIdx1,Ndgm);
-ZZ=zeros(ckNrx(1),maxWCSampIdx1,Ndgm);
-SV=zeros(ckNrx(1),maxWCSampIdx1,Ndgm);
-TT=zeros(ckNrx(1),maxWCSampIdx1,Ndgm);
-XX=zeros(ckNrx(1),maxWCSampIdx1,Ndgm);
+YY=zeros(ckNrx(1),maxWCSampIdx,Ndgm);
+ZZ=zeros(ckNrx(1),maxWCSampIdx,Ndgm);
+SV=zeros(ckNrx(1),maxWCSampIdx,Ndgm);
+TT=zeros(ckNrx(1),maxWCSampIdx,Ndgm);
+XX=zeros(ckNrx(1),maxWCSampIdx,Ndgm);
 xBottom=zeros(Ndgm,ckNrx(1));
 dTime=zeros(Ndgm,1);
 
@@ -361,7 +372,8 @@ for idgm=1:Ndgm  % just do the first ping for now
         %RxBeamWidth=wcdat(iping).rxInfo.nothere    beamAngle=wcdat(i).beamData_p.beamPointAngReVertical_deg;
     startRangeSampNum=wcdat(idgm).beamData_p.startRangeSampleNum;
     numSamps=wcdat(idgm).beamData_p.numSampleData; % not sure this is correct
-    maxWCSampIdx=numSamps(1);
+    % maxWCSampIdx=numSamps(1); % actually need this to be the max, max 
+    %       so set it outside this loop
     xmitSectNum=wcdat(idgm).beamData_p.beamTxSectorNum;
     %beamNum=wcdat(i).beamData_p.?  ask Liz what this is
     %beamAmp - need to read from binary file still
@@ -512,11 +524,11 @@ for idgm=1:Ndgm  % just do the first ping for now
     %    z_nadir(pingidx) = zBottom(nadir_idx);
     %    Sv_mmax(pingidx,:) = test_mmax;
 
-    YY(:,:,idgm)=y(:,1:maxWCSampIdx1);
-    ZZ(:,:,idgm)=z(:,1:maxWCSampIdx1);
-    SV(:,:,idgm)=Sv(:,1:maxWCSampIdx1);
-    TT(:,:,idgm)=TS(:,1:maxWCSampIdx1);
-    XX(:,:,idgm)=cartspeed*elapsedsec*ones(256,maxWCSampIdx1);
+    YY(:,:,idgm)=y(:,1:maxWCSampIdx);
+    ZZ(:,:,idgm)=z(:,1:maxWCSampIdx);
+    SV(:,:,idgm)=Sv(:,1:maxWCSampIdx);
+    TT(:,:,idgm)=TS(:,1:maxWCSampIdx);
+    XX(:,:,idgm)=cartspeed*elapsedsec*ones(256,maxWCSampIdx);
     xBottom(idgm,:)=cartspeed*elapsedsec*ones(1,256);
     dTime(idgm)=elapsedsec;
 
