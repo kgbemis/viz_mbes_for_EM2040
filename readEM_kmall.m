@@ -54,7 +54,9 @@ filelocation = ['../MBES_raw_data/' expcode '/'];
 %filename='0004_20230413_161651.kmwcd';
 
 
-%filename='0017_20230405_163521.kmwcd'; % apr13-B-cold flow-200 kHz
+%filename='0017_20230405_163521.kmwcd'; % early run
+
+
 %filename='0020_20230413_171151.kmwcd'; % apr13-575Hz
 %filename='0021_20230413_171231.kmwcd'; % apr13-B-hot flow-300 kHz
 %filename='0022_20230413_172311.kmwcd'; % apr13-B-hot flow-200 kHz-gas 
@@ -69,8 +71,8 @@ filelocation = ['../MBES_raw_data/' expcode '/'];
 % try 48
 %filename='0048_20230413_180417.kmwcd';
 %filename='0053_20230413_181816.kmwcd';
-%filename='0075_20230414_193631.kmwcd'; % Liz got plume but I don't :-(
-%filename2='0075_20230414_193631.kmall'; % Liz got plume but I don't :-(
+filename='0075_20230414_193631.kmwcd'; % Liz got plume but I don't :-(
+filename2='0075_20230414_193631.kmall'; % Liz got plume but I don't :-(
 %filename='0077_20230413_190346.kmwcd';
 %filename='0078_20230413_190400.kmwcd';
 %filename='0079_20230413_190422.kmwcd';
@@ -94,10 +96,12 @@ filelocation = ['../MBES_raw_data/' expcode '/'];
 
 %filename='0000_20230415_193500.kmwcd'; % calibration 
 %filename='0003_20230415_200249.kmwcd';
+
 %filename='0004_20230415_204544.kmwcd'; % test file for student work
-%ilename2='0004_20230415_204544.kmall';
-filename='0017_20230405_163521.kmwcd'; % apr13-B-cold flow-200 kHz
-filename2='0017_20230405_163521.kmall'; 
+%filename2='0004_20230415_204544.kmall'; % absolute calibration speed test - different setup
+
+%filename='0017_20230405_163521.kmwcd'; % early run
+%filename2='0017_20230405_163521.kmall'; 
 
 fname = fullfile(filelocation,filename);
 fprintf('reading file: %s \n',fname)
