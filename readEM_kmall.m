@@ -27,7 +27,7 @@ savefiles=1;
 
 outdir='../MBES_mat_files/';
 %expcode='geoA_Apr15_single_15Hz_slow_hot';
-expcode='';
+expcode='firstApr15runs';
 
 %% open an EM data file 
 
@@ -71,8 +71,8 @@ filelocation = ['../MBES_raw_data/' expcode '/'];
 % try 48
 %filename='0048_20230413_180417.kmwcd';
 %filename='0053_20230413_181816.kmwcd';
-filename='0075_20230414_193631.kmwcd'; % Liz got plume but I don't :-(
-filename2='0075_20230414_193631.kmall'; % Liz got plume but I don't :-(
+%filename='0075_20230414_193631.kmwcd'; % Liz got plume but I don't :-(
+%filename2='0075_20230414_193631.kmall'; % Liz got plume but I don't :-(
 %filename='0077_20230413_190346.kmwcd';
 %filename='0078_20230413_190400.kmwcd';
 %filename='0079_20230413_190422.kmwcd';
@@ -102,6 +102,10 @@ filename2='0075_20230414_193631.kmall'; % Liz got plume but I don't :-(
 
 %filename='0017_20230405_163521.kmwcd'; % early run
 %filename2='0017_20230405_163521.kmall'; 
+
+filename='0001_20230415_120215.kmwcd'; % early run
+filename2='0001_20230415_120215.kmall'; 
+
 
 fname = fullfile(filelocation,filename);
 fprintf('reading file: %s \n',fname)
