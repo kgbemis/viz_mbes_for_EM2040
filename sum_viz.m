@@ -49,7 +49,7 @@ shading flat
 set(gca,'ydir','reverse');
 set(gca,'fontname','Times'); 
 if sscanf(version('-release'),'%d')<2022
-    caxis([-140 -40]); colorbar
+    caxis([-140 -40]); colorbar %#ok<CAXIS>
 else
     %clim([-140 -40]); colorbar    
     clim(tsclims); colorbar    
@@ -69,7 +69,7 @@ shading flat
 set(gca,'ydir','reverse');
 set(gca,'fontname','Times'); 
 if sscanf(version('-release'),'%d')<2022
-    caxis([-140 -40]); colorbar
+    caxis([-140 -40]); colorbar %#ok<CAXIS>
 else
     %clim([-140 -40]); colorbar    
     clim(svclims); colorbar    
@@ -91,7 +91,7 @@ shading flat
 set(gca,'ydir','reverse');
 set(gca,'fontname','Times'); 
 if sscanf(version('-release'),'%d')<2022
-    caxis(tsclims); colorbar
+    caxis(tsclims); colorbar %#ok<CAXIS>
 else
     clim(tsclims); colorbar    
 end
@@ -113,7 +113,7 @@ shading flat
 set(gca,'ydir','reverse');
 set(gca,'fontname','Times'); 
 if sscanf(version('-release'),'%d')<2022
-    caxis(svclims); colorbar
+    caxis(svclims); colorbar %#ok<CAXIS>
 else
     clim(svclims); colorbar    
 end
@@ -135,7 +135,7 @@ shading flat
 set(gca,'ydir','reverse');
 set(gca,'fontname','Times'); 
 if sscanf(version('-release'),'%d')<2022
-    caxis([-140 -40]); colorbar
+    caxis([-140 -40]); colorbar %#ok<CAXIS>
 else
     clim([-140 -40]); colorbar    
 end
@@ -155,7 +155,7 @@ shading flat
 set(gca,'ydir','reverse');
 set(gca,'fontname','Times'); 
 if sscanf(version('-release'),'%d')<2022
-    caxis([-140 -40]); colorbar
+    caxis([-140 -40]); colorbar %#ok<CAXIS>
 else
     clim([-140 -40]); colorbar    
 end
@@ -167,8 +167,32 @@ hold off
 xlabel('distance across swath (m)')
 ylabel('depth below sonar (m)')
 
+% add a beam line and look at average values
+sidebeam=50;
+hold on
+plot(YY(sidebeam,:,pingtoplot),ZZ(sidebeam,:,pingtoplot),'k')
+hold off
 
-%figure(12)
+figure(12)
+Nsamp=length(ZZ(sidebeam,:,pingtoplot));
+bot=Nsamp-100;
+fprintf('number Z samps = %d should stop at %d\n',Nsamp,bot)
+subplot(121)
+    plot(SV(sidebeam,1:bot,pingtoplot),-ZZ(sidebeam,1:bot,pingtoplot),'k')
+    ylabel('depth (m)')
+    xlabel('scattering volume (dB)')
+subplot(122)
+    avgZdep=zeros(bot,1);
+    for i=1:bot
+        avgZdep(i)=mean(SV(sidebeam,1:i,pingtoplot));
+    end
+    plot(avgZdep,-ZZ(sidebeam,1:bot,pingtoplot),'k')
+    ylabel('depth (m)')
+    xlabel('cummulative average (dB)')
+
+
+
+%figure(xx)
 %p = patch(isosurface(XX,YY,ZZ,SV,-80));
 %isonormals(XX,YY,ZZ,SV,p)
 %p.FaceColor = 'red';
