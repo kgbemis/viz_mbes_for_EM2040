@@ -13,8 +13,9 @@ vizdat=load(fullfile(datadir,[filecode '_viz.mat ']));
     SV=vizdat.SV; % backscattering volume
     TT=vizdat.TT; % target strength????
     xBottom=vizdat.xBottom; % automatic floor detection results
-    yBottom=vizdat.yBottom;
-    zBottom=vizdat.zBottom;
+    [lenBot,~]=size(xBottom);
+    yBottom=vizdat.yBottom(1:lenBot,:);
+    zBottom=vizdat.zBottom(1:lenBot,:);
 load(fullfile(datadir,[filecode '.mat ']),'wcdat');
 
 % extract critical MBES and run information from mat file
