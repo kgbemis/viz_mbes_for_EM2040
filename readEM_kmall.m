@@ -25,6 +25,10 @@ vizping=1;
 do3Dviz=0;
 savefiles=1;
 
+% file specific choices
+numpingstoread=300;
+plotdepthmax=75;
+
 outdir='../MBES_mat_files/';
 %expcode='geoA_Apr15_single_15Hz_slow_hot';
 expcode='secondApr15runs';
@@ -32,7 +36,9 @@ expcode='secondApr15runs';
 
 %% open an EM data file 
 
-filelocation = ['../MBES_raw_data/' expcode '/'];
+filelocation = '../../OET/';
+%filelocation = '../../UNH_data/';
+%filelocation = ['../MBES_raw_data/' expcode '/'];
 %filelocation = 'e:UNH_tank_experiment\EM2040\UNH_EM2040_40_Apr_13_2023\';
 %filelocation = 'e:UNH_tank_experiment\EM2040\UNH_EM2040_40_Apr2023_geoA\';
 %filename='0009_20200918_094230.kmall';
@@ -109,8 +115,12 @@ filelocation = ['../MBES_raw_data/' expcode '/'];
 %filename2='0001_20230415_120215.kmall'; 
 %filename='0020_20230415_122405.kmwcd';
 %filename2='0020_20230415_122405.kmall';
-filename='0004_20230415_124403.kmwcd';
-filename2='0004_20230415_124403.kmall';
+%filename='0004_20230415_124403.kmwcd';
+%filename2='0004_20230415_124403.kmall';
+%filename='0004_20230415_204544.kmwcd';
+%filename2=[];
+filename='20240521_051137_sentry.kmwcd';
+filename2=[];
 
 
 
@@ -195,10 +205,21 @@ KMALLfileinfo = CFF_kmall_file_info(fname);
 if describe_datagrams
     figure(3)
     plot(KMALLfileinfo.dgm_num,'.')
+    title('counting the datagrams in the file')
+    xlabel('count')
+    ylabel('datagram number in file')
+
     fprintf('min dgm_num= %d; max dgm_num=%d\n',...
         min(KMALLfileinfo.dgm_num),max(KMALLfileinfo.dgm_num))
+    if isfield(KMALLfileinfo,'sync_counter')
     fprintf('min sync_counter= %d; max sync_counter=%d\n',...
         min(KMALLfileinfo.sync_counter),max(KMALLfileinfo.sync_counter))
+    elseif isfield(KMALLfileinfo,'syncCounter')
+    fprintf('min sync_counter= %d; max sync_counter=%d\n',...
+        min(KMALLfileinfo.syncCounter),max(KMALLfileinfo.syncCounter))
+    else
+        fprintf('invalid sync counter field name in KMALLfileinfo\n')
+    end
     fprintf('min parsed= %d; max parsed=%d\n',...
         min(KMALLfileinfo.parsed),max(KMALLfileinfo.parsed))
 
@@ -270,6 +291,9 @@ fprintf('central frequency of center sector = %f \n',wcdat(1).sectorData(1).cent
 % Second Note: pingcount is really an incremeted label that may or may not
 % start at 1 ==> subtract to get number of pings between two times
 Ndgm=length(wcdat);
+if Ndgm>numpingstoread
+    Ndgm=numpingstoread;
+end
 %%dgmtimes=NaT(Ndgm,1);
 %numOfDgms=zeros(Ndgm,1);
 %dgmNum=zeros(Ndgm,1);
@@ -302,9 +326,13 @@ dgmtimes=arrayfun(@(x) datetime(x.header.time_sec,'ConvertFrom','posixtime'),wcd
 if check_dgmtimes
     figure(5)
     subplot(211)
-    plot(dgmtimes,numOfDgms,'p',dgmtimes,dgmNum)
+        plot(dgmtimes,numOfDgms,'p',dgmtimes,dgmNum)
+        xlabel('time of datagram')
+        ylabel('number of datagrams at this time')
     subplot(212)
-    plot(dgmtimes,pingcount,'.-')
+        plot(dgmtimes,pingcount,'.-')
+        xlabel('time of datagram')
+        ylabel('ping counter')
     
     fprintf('first ping count = %d\n',pingcount(1))
     fprintf('last ping count = %d\n',pingcount(end))
@@ -498,7 +526,7 @@ for idgm=1:Ndgm  % just do the first ping for now
              set(gca,'fontname','Times'); 
                 caxis([-140 -60]); colorbar
              title(['Ping ' num2str(pingidx) ': TS'])
-             ylim([0 6])
+             ylim([0 plotdepthmax])
              hold on
              plot(yBottom(pingidx,:),zBottom(pingidx,:),'r.')
              hold off 
@@ -512,7 +540,7 @@ for idgm=1:Ndgm  % just do the first ping for now
              title(['Ping ' num2str(pingidx) ' :Sv'])
              hold on
              plot(yBottom(pingidx,:),zBottom(pingidx,:),'r.')
-             ylim([0 6])
+             ylim([0 plotdepthmax])
              hold off
         end % vizping
 
