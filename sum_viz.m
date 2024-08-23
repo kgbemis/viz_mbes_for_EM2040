@@ -16,12 +16,24 @@ vizdat=load(fullfile(datadir,[filecode '_viz.mat ']));
     [lenBot,~]=size(xBottom);
     yBottom=vizdat.yBottom(1:lenBot,:);
     zBottom=vizdat.zBottom(1:lenBot,:);
+    [nBeams,mSamples,pDgms]=size(XX);
+    fprintf('viz mat file has data for %d beams by %d samples for %d pings \n',...
+        nBeams,mSamples,pDgms)
 load(fullfile(datadir,[filecode '.mat ']),'wcdat');
 
 % extract critical MBES and run information from mat file
 Ndgm=length(wcdat); % this is number of WC datagrams
-fprintf('number WC datagrams = %d\n',Ndgm)
-startdate=datetime(wcdat(1).header.time_sec,'ConvertFrom','posixtime');
+fprintf('total number WC datagrams in raw data file = %d \n',Ndgm)
+fprintf('available datagrams in this file = %d \n',pDgms)
+startDgm=vizdat.startDgm;
+endDgm=vizdat.endDgm;
+fprintf('using pings %d to %d \n',startDgm,endDgm)
+if startDgm>1
+    % adjust ping to plot
+    pingtoplot=pingtoplot-startDgm+1;
+end
+
+startdate=datetime(wcdat(startDgm).header.time_sec,'ConvertFrom','posixtime');
 startstr=char(startdate);
 
 % setup info for labeling
@@ -43,9 +55,10 @@ if isempty(tsclims)
 end
    
 %plot along track profile
+meanBottom=mean(zBottom(:,thisbeam));
 f6=figure(6);
 pcolor(squeeze(XX(thisbeam,:,:)),squeeze(ZZ(thisbeam,:,:)),squeeze(TT(thisbeam,:,:)))
-ylim([0 6])
+ylim([0 meanBottom+1])
 shading flat
 set(gca,'ydir','reverse');
 set(gca,'fontname','Times'); 
@@ -65,7 +78,7 @@ ylabel('depth below sonar (m)')
 
 f7=figure(7);
 pcolor(squeeze(XX(thisbeam,:,:)),squeeze(ZZ(thisbeam,:,:)),squeeze(SV(thisbeam,:,:)))
-ylim([0 6])
+ylim([0 meanBottom+1])
 shading flat
 set(gca,'ydir','reverse');
 set(gca,'fontname','Times'); 
@@ -85,9 +98,9 @@ ylabel('depth below sonar (m)')
 
 % plot a summary of pings
 f8=figure(8);
-pcolor(mean(YY(:,:,fix(Ndgm/2):ceil(3*Ndgm/4)),3),...
-    mean(ZZ(:,:,fix(Ndgm/2):ceil(3*Ndgm/4)),3),...
-    mean(TT(:,:,fix(Ndgm/2):ceil(3*Ndgm/4)),3))
+pcolor(mean(YY(:,:,fix(pDgms/2):ceil(3*pDgms/4)),3),...
+    mean(ZZ(:,:,fix(pDgms/2):ceil(3*pDgms/4)),3),...
+    mean(TT(:,:,fix(pDgms/2):ceil(3*pDgms/4)),3))
 shading flat
 set(gca,'ydir','reverse');
 set(gca,'fontname','Times'); 
@@ -100,16 +113,16 @@ title(['run ' fileinfo{1} ': starts at ' startstr ': average Ping return: TS'])
 hold on
  plot(mean(yBottom,1),mean(zBottom,1),'m.')
  plot(yBottom(pingtoplot,:),zBottom(pingtoplot,:),'r.')
- ylim([0 6])
+ ylim([0 meanBottom+1])
 hold off
 xlabel('distance across swath (m)')
 ylabel('depth below sonar (m)')
 
 % plot a summary of pings
 f9=figure(9);
-pcolor(mean(YY(:,:,fix(Ndgm/2):ceil(3*Ndgm/4)),3),...
-    mean(ZZ(:,:,fix(Ndgm/2):ceil(3*Ndgm/4)),3),...
-    mean(SV(:,:,fix(Ndgm/2):ceil(3*Ndgm/4)),3))
+pcolor(mean(YY(:,:,fix(pDgms/2):ceil(3*pDgms/4)),3),...
+    mean(ZZ(:,:,fix(pDgms/2):ceil(3*pDgms/4)),3),...
+    mean(SV(:,:,fix(pDgms/2):ceil(3*pDgms/4)),3))
 shading flat
 set(gca,'ydir','reverse');
 set(gca,'fontname','Times'); 
@@ -122,7 +135,7 @@ title(['run ' fileinfo{1} ': starts at ' startstr ': average Ping return: SV'])
 hold on
  plot(mean(yBottom,1),mean(zBottom,1),'m.')
  plot(yBottom(pingtoplot,:),zBottom(pingtoplot,:),'r.')
- ylim([0 6])
+ ylim([0 meanBottom+1])
 hold off
 xlabel('distance across swath (m)')
 ylabel('depth below sonar (m)')
@@ -131,7 +144,7 @@ ylabel('depth below sonar (m)')
 % plot a specific ping
 f10=figure(10);
 pcolor(YY(:,:,pingtoplot),ZZ(:,:,pingtoplot),TT(:,:,pingtoplot))
-ylim([0 6])
+ylim([0 meanBottom+1])
 shading flat
 set(gca,'ydir','reverse');
 set(gca,'fontname','Times'); 
@@ -151,7 +164,7 @@ ylabel('depth below sonar (m)')
 % plot a specific ping
 f11=figure(11);
 pcolor(YY(:,:,pingtoplot),ZZ(:,:,pingtoplot),SV(:,:,pingtoplot))
-ylim([0 6])
+ylim([0 meanBottom+1])
 shading flat
 set(gca,'ydir','reverse');
 set(gca,'fontname','Times'); 
