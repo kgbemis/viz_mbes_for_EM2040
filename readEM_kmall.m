@@ -26,18 +26,21 @@ do3Dviz=0;
 savefiles=1;
 
 % file specific choices
-numpingstoread=300;
+startatping=31;
+endatping=60;
 plotdepthmax=75;
 
 outdir='../MBES_mat_files/';
 %expcode='geoA_Apr15_single_15Hz_slow_hot';
-expcode='secondApr15runs';
+%expcode='secondApr15runs';
+expcode='sentry_mbes';
 %expcode='';
 
 %% open an EM data file 
 
 filelocation = '../../OET/';
 %filelocation = '../../UNH_data/';
+%filelocation = '../MBES_raw_data/';
 %filelocation = ['../MBES_raw_data/' expcode '/'];
 %filelocation = 'e:UNH_tank_experiment\EM2040\UNH_EM2040_40_Apr_13_2023\';
 %filelocation = 'e:UNH_tank_experiment\EM2040\UNH_EM2040_40_Apr2023_geoA\';
@@ -121,8 +124,10 @@ filelocation = '../../OET/';
 %filename2=[];
 filename='20240521_051137_sentry.kmwcd';
 filename2=[];
-
-
+%filename='0056_20230414_181435.kmwcd';
+%filename2='0056_20230414_181435.kmall';
+%filename='0048_20230413_180417.kmwcd';
+%filename2='0048_20230413_180417.kmall';
 
 fname = fullfile(filelocation,filename);
 fprintf('reading file: %s \n',fname)
@@ -255,7 +260,7 @@ if describe_datagrams
 end % describe_datagrams
 
 %% now we want to read some datagrams and figure out what to do with the data!
-% this should read all the data
+% this should read all the meta data
 KMALLdata = CFF_read_kmall(fname);
 % 5/31/23 - try making a cell with both .kmwcd and .kmall names
 %fnamepair{1,1}=fname;
@@ -290,10 +295,16 @@ fprintf('central frequency of center sector = %f \n',wcdat(1).sectorData(1).cent
 % just index into the single number, e.g. "wcdat.header.time_sec"   
 % Second Note: pingcount is really an incremeted label that may or may not
 % start at 1 ==> subtract to get number of pings between two times
-Ndgm=length(wcdat);
-if Ndgm>numpingstoread
-    Ndgm=numpingstoread;
+totalNdgm=length(wcdat);
+% check user set limits on what to read and reset accordingly
+startDgm=startatping;
+endDgm=endatping;
+if endDgm>totalNdgm
+    endDgm=totalDgm;
+    fprintf('User setting (%d) for end ping exceeds number of pings (%d) \n',...
+        endatping,totalNDgm)
 end
+Ndgm=endDgm-startDgm+1;
 %%dgmtimes=NaT(Ndgm,1);
 %numOfDgms=zeros(Ndgm,1);
 %dgmNum=zeros(Ndgm,1);
@@ -362,12 +373,17 @@ numSamps1=wcdat(1).beamData_p.numSampleData; % not sure this is correct
 maxWCSampIdx1=numSamps1(1);
     fprintf('number samples (ping 1, beam 1) = %d\n',maxWCSampIdx1)
 maxSamps=zeros(Ndgm,1);
-for i=1:Ndgm
+for i=1:totalNdgm
     numSamps=wcdat(i).beamData_p.numSampleData;
     maxSamps(i)=max(numSamps);
 end
-maxWCSampIdx=max(maxSamps);
-    fprintf('maximum number samples = %d\n',maxWCSampIdx)
+maxWCSampIdx=max(maxSamps(startDgm:endDgm));
+    fprintf('maximum number samples for all pings = %d\n',max(maxSamps))
+    fprintf('maximum number samples for pings to read = %d\n',maxWCSampIdx)
+figure(6)
+plot(1:totalNdgm,maxSamps,'p-')
+xlabel('Ping Number = Datagram Number')
+ylabel('Maximum Beam Samples per Ping')
 
 
 %dgmtime=NaT(num,1); would create empty datetime array
@@ -379,8 +395,9 @@ XX=zeros(ckNrx(1),maxWCSampIdx,Ndgm);
 xBottom=zeros(Ndgm,ckNrx(1));
 dTime=zeros(Ndgm,1);
 
-for idgm=1:Ndgm  % just do the first ping for now
-    %fprintf('reading %d-th ping now\n',idgm)
+%for idgm=1:Ndgm  % just do the first ping for now
+for idgm=startDgm:endDgm  % just do the first ping for now
+    fprintf('reading %d-th ping now\n',idgm)
     % header
         % time coming from datagram header - already pulled
         %dgmtime(idgm)=datetime(wcdat(idgm).header.dgtime,'ConvertFrom','posixtime');
@@ -423,6 +440,7 @@ for idgm=1:Ndgm  % just do the first ping for now
     beamAmpdata=read_bin_kmall(fname,wcdat(idgm));
     %DR huh?
     Nrx=wcdat(idgm).rxInfo.numBeams;
+        fprintf('number of beams = %d \n',Nrx)
     beamAngle=wcdat(idgm).beamData_p.beamPointAngReVertical_deg';
     DR=wcdat(idgm).beamData_p.detectedRangeInSamples; % no idea if this makes sense
     beamAmp=zeros(Nrx,1);
@@ -677,9 +695,12 @@ if savefiles
 % outdir='../MBES_mat_data/'; % moving to top
 datafile=filename(1:end-6);
 source=filename(end-4:end);
-outmatfile=fullfile(outdir,[datafile '_' source '.mat']);
-outvizfile=fullfile(outdir,[datafile '_' source '_viz.mat']);
-outallstruct=fullfile(outdir,[datafile '_bothstructs.mat']);
+outmatfile=fullfile(outdir,...
+    [datafile '_' source '_pings_' num2str(startDgm) '_' num2str(endDgm) '.mat']);
+outvizfile=fullfile(outdir,...
+    [datafile '_' source '_pings_' num2str(startDgm) '_' num2str(endDgm) '_viz.mat']);
+outallstruct=fullfile(outdir,...
+    [datafile '_pings_' num2str(startDgm) '_' num2str(endDgm) '_bothstructs.mat']);
 fprintf('saving to file %s \n',outmatfile)
 save(outmatfile,'wcdat')
 save(outvizfile,'XX','YY','ZZ','SV','TT','xBottom','yBottom','zBottom','dTime');

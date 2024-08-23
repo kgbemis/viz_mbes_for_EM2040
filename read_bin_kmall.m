@@ -13,6 +13,7 @@ for ibeam=1:Nrx
     fseek(fid,pif,'bof');
     % get number of samples
     Ns = wcdat.beamData_p.numSampleData(ibeam);
+        %fprintf('Ns = %d \n',Ns)
 
     % next section copied from CFF_read_EMdgmMWC.m
     % ------------------ OPTION 1: ACTUALLY READ DATA ---------------------
