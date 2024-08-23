@@ -305,6 +305,8 @@ if endDgm>totalNdgm
         endatping,totalNDgm)
 end
 Ndgm=endDgm-startDgm+1;
+    fprintf('reading %d pings from ping %d to ping %d \n',...
+        Ndgm,startDgm,endDgm)
 %%dgmtimes=NaT(Ndgm,1);
 %numOfDgms=zeros(Ndgm,1);
 %dgmNum=zeros(Ndgm,1);
@@ -490,7 +492,7 @@ for idgm=startDgm:endDgm  % just do the first ping for now
         %RTval=10*log10((RxBeamWidth/10)*pi/1800*(TxBeamWidth/10)*pi/1800);
         RTval=10*log10(RxBeamWidth*pi/180*TxBeamWidth(cenSec)*pi/180);
         TS = Awc + RTval.*ones(size(Awc)) - double(X).*log10(ones(length(Awc(:,1)),1)*range) + 40*log10(ones(length(Awc(:,1)),1)*range) - double(C);
-        tsBuf1(pingidx,1:length(TS(:,1)),1:length(TS(1,:))) = TS;
+        %tsBuf1(pingidx,1:length(TS(:,1)),1:length(TS(1,:))) = TS;
 
         %steeringangle = beamAngle/100;
         steeringangle = beamAngle;
@@ -702,9 +704,13 @@ outvizfile=fullfile(outdir,...
 outallstruct=fullfile(outdir,...
     [datafile '_pings_' num2str(startDgm) '_' num2str(endDgm) '_bothstructs.mat']);
 fprintf('saving to file %s \n',outmatfile)
-save(outmatfile,'wcdat')
-save(outvizfile,'XX','YY','ZZ','SV','TT','xBottom','yBottom','zBottom','dTime');
-save(outallstruct,'KMALLdata','KMALLdata2')
+save(outmatfile,'wcdat','startDgm','endDgm')
+save(outvizfile,'XX','YY','ZZ','SV','TT','xBottom','yBottom','zBottom','dTime','startDgm','endDgm');
+if exist('KMALLdata2','var')
+    save(outallstruct,'KMALLdata','KMALLdata2')
+else
+    save(outallstruct,'KMALLdata')
+end
 end % savefiles
 
 fclose(fid);
