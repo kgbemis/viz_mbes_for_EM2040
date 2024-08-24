@@ -22,12 +22,12 @@ describe_datagrams=1;
 % always reads kmall file info and kmwcd data
 check_dgmtimes=1; % always computes times, this just controls plots
 vizping=1;
-do3Dviz=0;
+do3Dviz=1;
 savefiles=1;
 
 % file specific choices
-startatping=31;
-endatping=60;
+startatping=2500;
+endatping=2600;
 plotdepthmax=75;
 
 outdir='../MBES_mat_files/';
@@ -382,7 +382,7 @@ end
 maxWCSampIdx=max(maxSamps(startDgm:endDgm));
     fprintf('maximum number samples for all pings = %d\n',max(maxSamps))
     fprintf('maximum number samples for pings to read = %d\n',maxWCSampIdx)
-figure(6)
+figure(12)
 plot(1:totalNdgm,maxSamps,'p-')
 xlabel('Ping Number = Datagram Number')
 ylabel('Maximum Beam Samples per Ping')
@@ -455,11 +455,17 @@ for idgm=startDgm:endDgm  % just do the first ping for now
 
         % this part is very much Liz's code
     if DatagramNum == NumDatagrams
-        pingidx = idgm;  % since we know ping numbers, just set rather than counting
+        pingidx = idgm-startDgm+1;  % changing to use this as the count
+        %   although since we know ping numbers, just set rather than counting
+        % use idgm if want to pull something from wcdat as this is the
+        %   correct value for the full set of datagrams
+        % use pingidx if want the index corresponding to the current
+        %   counter of pings being read
+        % these differ if not reading all binary data!
 
         pingTime(pingidx) = thistime;    % datetime
         %elapsedsec=second(pingTime(idgm)-pingTime(1));
-        elapsedsec=pingTime(idgm)-pingTime(1);
+        elapsedsec=pingTime(pingidx)-pingTime(1);
         %elapsedsec=posixtimes(idgm)-posixtimes(1);
 
         %size(beamAmp)
@@ -545,7 +551,7 @@ for idgm=startDgm:endDgm  % just do the first ping for now
                 set(gca,'ydir','reverse');
              set(gca,'fontname','Times'); 
                 caxis([-140 -60]); colorbar
-             title(['Ping ' num2str(pingidx) ': TS'])
+             title(['Ping ' num2str(idgm) ': TS'])
              ylim([0 plotdepthmax])
              hold on
              plot(yBottom(pingidx,:),zBottom(pingidx,:),'r.')
@@ -557,7 +563,7 @@ for idgm=startDgm:endDgm  % just do the first ping for now
                 set(gca,'ydir','reverse');
              set(gca,'fontname','Times'); 
                 caxis([-140 -60]); colorbar
-             title(['Ping ' num2str(pingidx) ' :Sv'])
+             title(['Ping ' num2str(idgm) ' :Sv'])
              hold on
              plot(yBottom(pingidx,:),zBottom(pingidx,:),'r.')
              ylim([0 plotdepthmax])
@@ -586,14 +592,15 @@ for idgm=startDgm:endDgm  % just do the first ping for now
     %    y_mid_bin(pingidx,:) = y_mid;
     %    z_nadir(pingidx) = zBottom(nadir_idx);
     %    Sv_mmax(pingidx,:) = test_mmax;
-
-    YY(:,:,idgm)=y(:,1:maxWCSampIdx);
-    ZZ(:,:,idgm)=z(:,1:maxWCSampIdx);
-    SV(:,:,idgm)=Sv(:,1:maxWCSampIdx);
-    TT(:,:,idgm)=TS(:,1:maxWCSampIdx);
-    XX(:,:,idgm)=cartspeed*elapsedsec*ones(256,maxWCSampIdx);
-    xBottom(idgm,:)=cartspeed*elapsedsec*ones(1,256);
-    dTime(idgm)=elapsedsec;
+    
+    %ping_ind=idgm-startDgm+1;
+    YY(:,:,pingidx)=y(:,1:maxWCSampIdx);
+    ZZ(:,:,pingidx)=z(:,1:maxWCSampIdx);
+    SV(:,:,pingidx)=Sv(:,1:maxWCSampIdx);
+    TT(:,:,pingidx)=TS(:,1:maxWCSampIdx);
+    XX(:,:,pingidx)=cartspeed*elapsedsec*ones(256,maxWCSampIdx);
+    xBottom(pingidx,:)=cartspeed*elapsedsec*ones(1,256);
+    dTime(pingidx)=elapsedsec;
 
     end % inside datagram split check
 
@@ -616,12 +623,14 @@ if sscanf(version('-release'),'%d')<2022
 else
     clim([-140 -40]); colorbar    
 end
-title(['end Ping ' num2str(pingidx) ' :TS'])
+ylim([0 plotdepthmax])
+title(['end Ping ' num2str(idgm) ' :TS'])
 hold on
  plot(xBottom(:,thisbeam),zBottom(:,thisbeam),'r.')
  plot(xBottom(pingtoplot,thisbeam).*ones(2,1),[0 6],'k')
- ylim([0 6])
 hold off
+xlabel('distance along track (arbitrary)')
+ylabel('depth (m)')
 
 figure(7)
 pcolor(squeeze(XX(thisbeam,:,:)),squeeze(ZZ(thisbeam,:,:)),squeeze(SV(thisbeam,:,:)))
@@ -633,10 +642,10 @@ if sscanf(version('-release'),'%d')<2022
 else
     clim([-140 -40]); colorbar    
 end
-title(['end Ping ' num2str(pingidx) ' :SV'])
+title(['end Ping ' num2str(idgm) ' :SV'])
 hold on
  plot(xBottom(:,thisbeam),zBottom(:,thisbeam),'r.')
- ylim([0 6])
+ ylim([0 plotdepthmax])
 hold off
 
 % plot a summary of pings
@@ -652,10 +661,10 @@ if sscanf(version('-release'),'%d')<2022
 else
     clim([-140 -40]); colorbar    
 end
-title(['end Ping ' num2str(pingidx) ' :Sv'])
+title(['end Ping ' num2str(idgm) ' :Sv'])
 hold on
  plot(mean(yBottom,1),mean(zBottom,1),'r.')
- ylim([0 6])
+ ylim([0 plotdepthmax])
 hold off
 
 % plot a specific ping
@@ -669,11 +678,11 @@ if sscanf(version('-release'),'%d')<2022
 else
     clim([-140 -40]); colorbar    
 end
-title(['end Ping ' num2str(pingidx) ' :Sv'])
+title(['end Ping ' num2str(idgm) ' :Sv'])
 hold on
  plot(mean(yBottom,1),mean(zBottom,1),'r.')
  plot(YY(thisbeam,:,pingtoplot),ZZ(thisbeam,:,pingtoplot),'k')
- ylim([0 6])
+ ylim([0 plotdepthmax])
 hold off
 
 %figure(10)
