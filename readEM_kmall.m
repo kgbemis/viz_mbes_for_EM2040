@@ -338,14 +338,21 @@ ckNumSectors=arrayfun(@(x) x.txInfo.numTxSectors,wcdat);
 dgmtimes=arrayfun(@(x) datetime(x.header.time_sec,'ConvertFrom','posixtime'),wcdat);
 if check_dgmtimes
     figure(5)
-    subplot(211)
+    subplot(311)
         plot(dgmtimes,numOfDgms,'p',dgmtimes,dgmNum)
         xlabel('time of datagram')
-        ylabel('number of datagrams at this time')
-    subplot(212)
-        plot(dgmtimes,pingcount,'.-')
+        ylabel('# datagrams')
+        title('number of datagrams at this time')
+    subplot(312)
+        plot(dgmtimes(1:end-1)+0.5*diff(dgmtimes),diff(pingcount),'.-')
         xlabel('time of datagram')
-        ylabel('ping counter')
+        ylabel('counter difference')
+        title('increment in sonar-side ping counter value')
+    subplot(313)
+        plot(dgmtimes(1:end-1)+0.5*diff(dgmtimes),diff(pingcount),'.-')
+        xlabel('time of datagram')
+        ylabel('time difference')
+        title('time between pings in file')
     
     fprintf('first ping count = %d\n',pingcount(1))
     fprintf('last ping count = %d\n',pingcount(end))
@@ -661,7 +668,7 @@ if sscanf(version('-release'),'%d')<2022
 else
     clim([-140 -40]); colorbar    
 end
-title(['end Ping ' num2str(idgm) ' :Sv'])
+title(['average pings ' num2str(idgm-Ndgm+1) '-' num2str(idgm) ' :Sv'])
 hold on
  plot(mean(yBottom,1),mean(zBottom,1),'r.')
  ylim([0 plotdepthmax])
