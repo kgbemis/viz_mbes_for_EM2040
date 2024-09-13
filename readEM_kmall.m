@@ -26,9 +26,9 @@ do3Dviz=1;
 savefiles=1;
 
 % file specific choices
-startatping=2500;
-endatping=2600;
-plotdepthmax=75;
+startatping=1;
+endatping=500;
+plotdepthmax=7; % 7 for UNH, 75 for Sentry
 
 outdir='../MBES_mat_files/';
 %expcode='geoA_Apr15_single_15Hz_slow_hot';
@@ -38,9 +38,9 @@ expcode='sentry_mbes';
 
 %% open an EM data file 
 
-filelocation = '../../OET/';
+%filelocation = '../../OET/';
 %filelocation = '../../UNH_data/';
-%filelocation = '../MBES_raw_data/';
+filelocation = '../MBES_raw_data/';
 %filelocation = ['../MBES_raw_data/' expcode '/'];
 %filelocation = 'e:UNH_tank_experiment\EM2040\UNH_EM2040_40_Apr_13_2023\';
 %filelocation = 'e:UNH_tank_experiment\EM2040\UNH_EM2040_40_Apr2023_geoA\';
@@ -122,12 +122,16 @@ filelocation = '../../OET/';
 %filename2='0004_20230415_124403.kmall';
 %filename='0004_20230415_204544.kmwcd';
 %filename2=[];
-filename='20240521_051137_sentry.kmwcd';
-filename2=[];
+%filename='20240521_051137_sentry.kmwcd';
+%filename2=[];
 %filename='0056_20230414_181435.kmwcd';
 %filename2='0056_20230414_181435.kmall';
 %filename='0048_20230413_180417.kmwcd';
 %filename2='0048_20230413_180417.kmall';
+%filename='0013_20230414_151949.kmwcd';
+%filename2='0013_20230414_151949.kmall';
+filename='0011_20230414_151858.kmwcd';
+filename2='0011_20230414_151858.kmall';
 
 fname = fullfile(filelocation,filename);
 fprintf('reading file: %s \n',fname)
@@ -300,9 +304,9 @@ totalNdgm=length(wcdat);
 startDgm=startatping;
 endDgm=endatping;
 if endDgm>totalNdgm
-    endDgm=totalDgm;
+    endDgm=totalNdgm;
     fprintf('User setting (%d) for end ping exceeds number of pings (%d) \n',...
-        endatping,totalNDgm)
+        endatping,totalNdgm)
 end
 Ndgm=endDgm-startDgm+1;
     fprintf('reading %d pings from ping %d to ping %d \n',...
@@ -335,7 +339,11 @@ pingcount=arrayfun(@(x) x.cmnPart.pingCnt,wcdat);
 numbeams=arrayfun(@(x) x.rxInfo.numBeams,wcdat);
 %
 ckNumSectors=arrayfun(@(x) x.txInfo.numTxSectors,wcdat);
-dgmtimes=arrayfun(@(x) datetime(x.header.time_sec,'ConvertFrom','posixtime'),wcdat);
+%dgmtimes=arrayfun(@(x) datetime(x.header.time_sec,'ConvertFrom','posixtime','format','yyyy-MM-dd HH:mm:ss.SSS'),wcdat);
+%   time in seconds not sufficient for accurate timing
+dgmsec=arrayfun(@(x) datetime(x.header.time_sec,'ConvertFrom','posixtime'),wcdat);
+dgmnanosec=arrayfun(@(x) x.header.time_nanosec,wcdat);
+dgmtimes=dgmsec+seconds(dgmnanosec/1e9);
 if check_dgmtimes
     figure(5)
     subplot(311)
@@ -349,7 +357,7 @@ if check_dgmtimes
         ylabel('counter difference')
         title('increment in sonar-side ping counter value')
     subplot(313)
-        plot(dgmtimes(1:end-1)+0.5*diff(dgmtimes),diff(pingcount),'.-')
+        plot(dgmtimes(1:end-1)+0.5*diff(dgmtimes),diff(dgmtimes),'.-')
         xlabel('time of datagram')
         ylabel('time difference')
         title('time between pings in file')
@@ -382,9 +390,11 @@ numSamps1=wcdat(1).beamData_p.numSampleData; % not sure this is correct
 maxWCSampIdx1=numSamps1(1);
     fprintf('number samples (ping 1, beam 1) = %d\n',maxWCSampIdx1)
 maxSamps=zeros(Ndgm,1);
+keepSamps=zeros(ckNrx(1),totalNdgm);
 for i=1:totalNdgm
     numSamps=wcdat(i).beamData_p.numSampleData;
     maxSamps(i)=max(numSamps);
+    keepSamps(:,i)=numSamps;
 end
 maxWCSampIdx=max(maxSamps(startDgm:endDgm));
     fprintf('maximum number samples for all pings = %d\n',max(maxSamps))
@@ -393,7 +403,7 @@ figure(12)
 plot(1:totalNdgm,maxSamps,'p-')
 xlabel('Ping Number = Datagram Number')
 ylabel('Maximum Beam Samples per Ping')
-
+% try plotting keepSamps to see why too big numSamps
 
 %dgmtime=NaT(num,1); would create empty datetime array
 YY=zeros(ckNrx(1),maxWCSampIdx,Ndgm);
