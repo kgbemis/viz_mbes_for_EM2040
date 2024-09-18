@@ -128,10 +128,10 @@ filelocation = '../MBES_raw_data/';
 %filename2='0056_20230414_181435.kmall';
 %filename='0048_20230413_180417.kmwcd';
 %filename2='0048_20230413_180417.kmall';
-%filename='0013_20230414_151949.kmwcd';
-%filename2='0013_20230414_151949.kmall';
-filename='0011_20230414_151858.kmwcd';
-filename2='0011_20230414_151858.kmall';
+filename='0013_20230414_151949.kmwcd';
+filename2='0013_20230414_151949.kmall';
+%filename='0011_20230414_151858.kmwcd';
+%filename2='0011_20230414_151858.kmall';
 
 fname = fullfile(filelocation,filename);
 fprintf('reading file: %s \n',fname)
@@ -368,6 +368,7 @@ if check_dgmtimes
 end
 
 figure(11)
+hold on
 p = arrayfun(@(a) plot(a.beamData_p.beamTxSectorNum),wcdat);
 xlabel('beam number')
 ylabel('sector number')
