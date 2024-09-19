@@ -28,7 +28,7 @@ savefiles=1;
 % file specific choices
 startatping=1;
 endatping=500;
-plotdepthmax=7; % 7 for UNH, 75 for Sentry
+plotdepthmax=50; % 7 for UNH, 50 or 75 for Sentry
 
 outdir='../MBES_mat_files/';
 %expcode='geoA_Apr15_single_15Hz_slow_hot';
@@ -134,7 +134,8 @@ filelocation = '../../OET/sentry_NA165/';
 %filename='0011_20230414_151858.kmwcd';
 %filename2='0011_20230414_151858.kmall';
 %filename='20240919_004509_sentry.kmwcd';
-filename='20240919_013335_sentry.kmwcd';
+%filename='20240919_013335_sentry.kmwcd';
+filename='20240919_015708_sentry.kmwcd';
 filename2=[];
 
 fname = fullfile(filelocation,filename);
