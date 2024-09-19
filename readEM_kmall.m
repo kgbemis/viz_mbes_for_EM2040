@@ -38,9 +38,10 @@ expcode='sentry_mbes';
 
 %% open an EM data file 
 
+filelocation = '../../OET/sentry_NA165/';
 %filelocation = '../../OET/';
 %filelocation = '../../UNH_data/';
-filelocation = '../MBES_raw_data/';
+%filelocation = '../MBES_raw_data/';
 %filelocation = ['../MBES_raw_data/' expcode '/'];
 %filelocation = 'e:UNH_tank_experiment\EM2040\UNH_EM2040_40_Apr_13_2023\';
 %filelocation = 'e:UNH_tank_experiment\EM2040\UNH_EM2040_40_Apr2023_geoA\';
@@ -128,10 +129,13 @@ filelocation = '../MBES_raw_data/';
 %filename2='0056_20230414_181435.kmall';
 %filename='0048_20230413_180417.kmwcd';
 %filename2='0048_20230413_180417.kmall';
-filename='0013_20230414_151949.kmwcd';
-filename2='0013_20230414_151949.kmall';
+%filename='0013_20230414_151949.kmwcd';
+%filename2='0013_20230414_151949.kmall';
 %filename='0011_20230414_151858.kmwcd';
 %filename2='0011_20230414_151858.kmall';
+%filename='20240919_004509_sentry.kmwcd';
+filename='20240919_013335_sentry.kmwcd';
+filename2=[];
 
 fname = fullfile(filelocation,filename);
 fprintf('reading file: %s \n',fname)
