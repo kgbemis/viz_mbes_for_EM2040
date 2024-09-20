@@ -4,6 +4,13 @@ function sum_viz(filecode,pingtoplot,thisbeam,doprint,printstr,svclims,tsclims)
 %   filecode = <kmwcd or kmall base filename>_kmwcd
 %
 
+
+%   set ringing level
+indRing=100;
+
+% set minimun reasonable bottom level
+minBot=10; % this depends on altitude of sonar above bottom
+
 % load data for summary visualization
 datadir='..\MBES_mat_files\';
 vizdat=load(fullfile(datadir,[filecode '_viz.mat ']));
@@ -13,12 +20,13 @@ vizdat=load(fullfile(datadir,[filecode '_viz.mat ']));
     SV=vizdat.SV; % backscattering volume
     TT=vizdat.TT; % target strength????
     xBottom=vizdat.xBottom; % automatic floor detection results
-    [lenBot,~]=size(xBottom);
+    [lenBot,nbotbeams]=size(xBottom);
     yBottom=vizdat.yBottom(1:lenBot,:);
     zBottom=vizdat.zBottom(1:lenBot,:);
     [nBeams,mSamples,pDgms]=size(XX);
     fprintf('viz mat file has data for %d beams by %d samples for %d pings \n',...
         nBeams,mSamples,pDgms)
+    fprintf('bottom picks done for %d pings and %d beams\n',lenBot,nbotbeams)
 load(fullfile(datadir,[filecode '.mat ']),'wcdat');
 
 % extract critical MBES and run information from mat file
@@ -53,6 +61,29 @@ end
 if isempty(tsclims)
     tsclims=[-140 -40];
 end
+
+% determine issues with bottom picks for later use
+figure(15)
+pcolor(zBottom)
+shading flat
+colorbar
+title('map of bottom picks - z value')
+figure(16)
+pcolor(yBottom)
+shading flat
+colorbar
+title('map of bottom picks - y value')
+figure(17)
+pcolor(xBottom)
+shading flat
+colorbar
+title('map of bottom picks - x value')
+% need to fill in all the missing points where there was no bottom pick
+% try fillmissing2 function to see if this works
+% maps look like linear interpolation will work fine for both z & y
+% x values do not need interpolation
+
+
    
 %plot along track profile
 meanBottom=mean(zBottom(:,thisbeam));
@@ -114,6 +145,7 @@ title(['run ' fileinfo{1} ': starts at ' startstr ': average Ping return: TS'])
 hold on
  plot(mean(yBottom,1),mean(zBottom,1),'m.')
  plot(yBottom(pingtoplot,:),zBottom(pingtoplot,:),'r.')
+ plot(zeros(indRing,1),ZZ(fix(nBeams/2),1:indRing,1),'w')
  ylim([0 meanBottom+botbuf])
 hold off
 xlabel('distance across swath (m)')
@@ -205,7 +237,94 @@ subplot(122)
     ylabel('depth (m)')
     xlabel('cummulative average (dB)')
 
+% compute and display average water column backscatter as map
+xloc=zeros(pDgms,nBeams);
+yloc=zeros(pDgms,nBeams);
+zloc=zeros(pDgms,nBeams);
+avgTS=zeros(pDgms,nBeams);
+avgTSabovering=zeros(pDgms,nBeams);
+botInd=zeros(pDgms,nBeams);
+for iping=1:pDgms
+    for ibeam=1:nBeams
+        % get bottom pick
+        % starting by assuming xBottom & zBottom have pDgmx pings and
+        %   nBeams beams ==> this works!
+        xloc(iping,ibeam)=xBottom(iping,ibeam);
+        yloc(iping,ibeam)=yBottom(iping,ibeam);
+        zloc(iping,ibeam)=zBottom(iping,ibeam);
+        fprintf('bottom pick for ping %d beam %d is %4.2f,%4.2f,%4.2f \n',...
+            iping,ibeam,xloc(iping,ibeam),yloc(iping,ibeam),zloc(iping,ibeam))
+        % check for valid bottom pick
+        if zloc(iping,ibeam)<minBot
+            fprintf('invalid bottom pick detected \n')
+            % get zloc for next or previous beams
+            switch ibeam
+                case 1
+                    alt_zloc=zloc(iping,ibeam+1);
+                    alt_yloc=yloc(iping,ibeam+1);
+                    % ARGH - need to reset yloc as well and this isn't
+                    % correct as need value corresponding to beam
+                case nBeams
+                    alt_zloc=zloc(iping,ibeam-1);
+                    alt_yloc=yloc(iping,ibeam-1);
+                otherwise
+                    alt_zloc=max(zloc(iping,ibeam-1:ibeam+1));
+                    alt_yloc=max(zloc(iping,ibeam-1:ibeam+1));
+            end
+            % check new zloc and if good, set value
+            if alt_zloc<minBot
+                fprintf('still no valid bottom pick\n')
+                fprintf('alt bottom pick for ping %d beam %d is %4.2f,%4.2f,%4.2f \n',...
+                    iping,ibeam,xloc(iping,ibeam),yloc(iping,ibeam),zloc(iping,ibeam))
+            else
+                zloc(iping,ibeam)=alt_zloc;
+                yloc(iping,ibeam)=alt_yloc;
+                fprintf('resetting bottom pick for ping %d beam %d is %4.2f,%4.2f,%4.2f \n',...
+                    iping,ibeam,xloc(iping,ibeam),yloc(iping,ibeam),zloc(iping,ibeam))
+            end
+        end
 
+        % find index where zBottom == ZZ for this ping and beam
+        thisZZ=squeeze(ZZ(ibeam,:,iping));
+        indBot=find((thisZZ-zloc(iping,ibeam))<0,1,'last');
+        botInd(iping,ibeam)=indBot;
+        % average water column backscatter above bottom
+        avgTS(iping,ibeam)=mean(TT(ibeam,1:indBot,iping));
+        % also average water column backscatter above first ringing ping
+        avgTSabovering(iping,ibeam)=mean(TT(ibeam,1:indBot,iping));
+
+    end
+end
+
+
+figure(13)
+pcolor(xloc,yloc,avgTS)
+shading flat
+set(gca,'fontname','Times'); 
+if sscanf(version('-release'),'%d')<2022
+    caxis([-140 -40]); colorbar %#ok<CAXIS>
+else
+    %clim([-140 -40]); colorbar    
+    clim(tsclims); colorbar    
+end
+title(['run ' fileinfo{1} ': starts at ' startstr ': TS'])
+xlabel('estimated distance along track (m)')
+ylabel('cross distance (m)')
+
+
+figure(14)
+pcolor(xloc,yloc,avgTSabovering)
+shading flat
+set(gca,'fontname','Times'); 
+if sscanf(version('-release'),'%d')<2022
+    caxis([-140 -40]); colorbar %#ok<CAXIS>
+else
+    %clim([-140 -40]); colorbar    
+    clim(tsclims); colorbar    
+end
+title(['run ' fileinfo{1} ': starts at ' startstr ': TS'])
+xlabel('estimated distance along track (m)')
+ylabel('cross distance (m)')
 
 %figure(xx)
 %p = patch(isosurface(XX,YY,ZZ,SV,-80));
