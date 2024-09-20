@@ -56,9 +56,10 @@ end
    
 %plot along track profile
 meanBottom=mean(zBottom(:,thisbeam));
+botbuf=10;
 f6=figure(6);
 pcolor(squeeze(XX(thisbeam,:,:)),squeeze(ZZ(thisbeam,:,:)),squeeze(TT(thisbeam,:,:)))
-ylim([0 meanBottom+1])
+ylim([0 meanBottom+botbuf])
 shading flat
 set(gca,'ydir','reverse');
 set(gca,'fontname','Times'); 
@@ -71,14 +72,14 @@ end
 title(['run ' fileinfo{1} ': starts at ' startstr ': TS'])
 hold on
  plot(xBottom(:,thisbeam),zBottom(:,thisbeam),'r.')
- plot(xBottom(pingtoplot,thisbeam).*ones(2,1),[0 6],'k')
+ plot(xBottom(pingtoplot,thisbeam).*ones(2,1),[0 meanBottom+botbuf],'k')
 hold off
 xlabel('estimated distance along track (m)')
 ylabel('depth below sonar (m)')
 
 f7=figure(7);
 pcolor(squeeze(XX(thisbeam,:,:)),squeeze(ZZ(thisbeam,:,:)),squeeze(SV(thisbeam,:,:)))
-ylim([0 meanBottom+1])
+ylim([0 meanBottom+botbuf])
 shading flat
 set(gca,'ydir','reverse');
 set(gca,'fontname','Times'); 
@@ -113,7 +114,7 @@ title(['run ' fileinfo{1} ': starts at ' startstr ': average Ping return: TS'])
 hold on
  plot(mean(yBottom,1),mean(zBottom,1),'m.')
  plot(yBottom(pingtoplot,:),zBottom(pingtoplot,:),'r.')
- ylim([0 meanBottom+1])
+ ylim([0 meanBottom+botbuf])
 hold off
 xlabel('distance across swath (m)')
 ylabel('depth below sonar (m)')
@@ -135,7 +136,7 @@ title(['run ' fileinfo{1} ': starts at ' startstr ': average Ping return: SV'])
 hold on
  plot(mean(yBottom,1),mean(zBottom,1),'m.')
  plot(yBottom(pingtoplot,:),zBottom(pingtoplot,:),'r.')
- ylim([0 meanBottom+1])
+ ylim([0 meanBottom+botbuf])
 hold off
 xlabel('distance across swath (m)')
 ylabel('depth below sonar (m)')
@@ -144,7 +145,7 @@ ylabel('depth below sonar (m)')
 % plot a specific ping
 f10=figure(10);
 pcolor(YY(:,:,pingtoplot),ZZ(:,:,pingtoplot),TT(:,:,pingtoplot))
-ylim([0 meanBottom+1])
+ylim([0 meanBottom+botbuf])
 shading flat
 set(gca,'ydir','reverse');
 set(gca,'fontname','Times'); 
@@ -164,7 +165,7 @@ ylabel('depth below sonar (m)')
 % plot a specific ping
 f11=figure(11);
 pcolor(YY(:,:,pingtoplot),ZZ(:,:,pingtoplot),SV(:,:,pingtoplot))
-ylim([0 meanBottom+1])
+ylim([0 meanBottom+botbuf])
 shading flat
 set(gca,'ydir','reverse');
 set(gca,'fontname','Times'); 
