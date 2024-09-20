@@ -135,7 +135,8 @@ filelocation = '../../OET/sentry_NA165/';
 %filename2='0011_20230414_151858.kmall';
 %filename='20240919_004509_sentry.kmwcd';
 %filename='20240919_013335_sentry.kmwcd';
-filename='20240919_015708_sentry.kmwcd';
+%filename='20240919_015708_sentry.kmwcd';
+filename='20240919_015519_sentry.kmwcd';
 filename2=[];
 
 fname = fullfile(filelocation,filename);
