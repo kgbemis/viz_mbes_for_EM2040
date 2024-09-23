@@ -6,7 +6,7 @@ function sum_viz(filecode,pingtoplot,thisbeam,doprint,printstr,svclims,tsclims)
 
 
 %   set ringing level
-indRing=100;
+indRing=1100;
 
 % set minimun reasonable bottom level
 minBot=10; % this depends on altitude of sonar above bottom
@@ -63,27 +63,63 @@ if isempty(tsclims)
 end
 
 % determine issues with bottom picks for later use
-figure(15)
-pcolor(zBottom)
-shading flat
-colorbar
-title('map of bottom picks - z value')
-figure(16)
-pcolor(yBottom)
-shading flat
-colorbar
-title('map of bottom picks - y value')
 figure(17)
-pcolor(xBottom)
-shading flat
-colorbar
-title('map of bottom picks - x value')
+subplot(131)
+    pcolor(zBottom)
+    shading flat
+    colorbar
+    title('map of bottom picks - z value')
+subplot(132)
+pcolor(yBottom)
+    shading flat
+    colorbar
+    title('map of bottom picks - y value')
+subplot(133)
+    pcolor(xBottom)
+    shading flat
+    colorbar
+    title('map of bottom picks - x value')
 % need to fill in all the missing points where there was no bottom pick
 % try fillmissing2 function to see if this works
 % maps look like linear interpolation will work fine for both z & y
 % x values do not need interpolation
 
+% locate missing locations 
+%      z==0 will work because values unset where no bottom pick was valid
+%      and otherwise z=0 is at the sonar so not a valid value
+BotMissing=zBottom==0;
 
+% fill them
+[zBotFilled,FillFlags]=fillmissing2(zBottom,"linear",'MissingLocations',BotMissing);
+[yBotFilled,~]=fillmissing2(yBottom,"linear",'MissingLocations',BotMissing);
+
+% check new values
+figure(18)
+subplot(141)
+    pcolor(zBotFilled)
+    shading flat
+    colorbar
+    title('map of bottom picks - z value - after missing filled')
+subplot(142)
+    pcolor(yBotFilled)
+    shading flat
+    colorbar
+    title('map of bottom picks - y value - after missing filled')
+subplot(143)
+    pcolor(FillFlags)
+    shading flat
+    colorbar
+    title('map of filled points')
+subplot(144)
+    pcolor(zBotFilled-zBottom)
+    shading flat
+    colorbar
+    title('z: original-filled')
+
+
+% set the bottom picks to the filled versions
+zBottom=zBotFilled;
+yBottom=yBotFilled;
    
 %plot along track profile
 meanBottom=mean(zBottom(:,thisbeam));
@@ -209,7 +245,7 @@ end
 title(['run ' fileinfo{1} ': starts at ' startstr ': Ping ' num2str(pingtoplot) ': SV'])
 hold on
  plot(yBottom(pingtoplot,:),zBottom(pingtoplot,:),'r.')
- %plot(YY(thisbeam,:,pingtoplot),ZZ(thisbeam,:,pingtoplot),'k')
+ plot(YY(thisbeam,:,pingtoplot),ZZ(thisbeam,:,pingtoplot),'k')
 hold off
 xlabel('distance across swath (m)')
 ylabel('depth below sonar (m)')
@@ -243,7 +279,10 @@ yloc=zeros(pDgms,nBeams);
 zloc=zeros(pDgms,nBeams);
 avgTS=zeros(pDgms,nBeams);
 avgTSabovering=zeros(pDgms,nBeams);
+maxTS=zeros(pDgms,nBeams);
+maxTSabovering=zeros(pDgms,nBeams);
 botInd=zeros(pDgms,nBeams);
+copyTT=TT;
 for iping=1:pDgms
     for ibeam=1:nBeams
         % get bottom pick
@@ -252,8 +291,8 @@ for iping=1:pDgms
         xloc(iping,ibeam)=xBottom(iping,ibeam);
         yloc(iping,ibeam)=yBottom(iping,ibeam);
         zloc(iping,ibeam)=zBottom(iping,ibeam);
-        fprintf('bottom pick for ping %d beam %d is %4.2f,%4.2f,%4.2f \n',...
-            iping,ibeam,xloc(iping,ibeam),yloc(iping,ibeam),zloc(iping,ibeam))
+        %fprintf('bottom pick for ping %d beam %d is %4.2f,%4.2f,%4.2f \n',...
+        %    iping,ibeam,xloc(iping,ibeam),yloc(iping,ibeam),zloc(iping,ibeam))
         % check for valid bottom pick
         if zloc(iping,ibeam)<minBot
             fprintf('invalid bottom pick detected \n')
@@ -274,13 +313,13 @@ for iping=1:pDgms
             % check new zloc and if good, set value
             if alt_zloc<minBot
                 fprintf('still no valid bottom pick\n')
-                fprintf('alt bottom pick for ping %d beam %d is %4.2f,%4.2f,%4.2f \n',...
-                    iping,ibeam,xloc(iping,ibeam),yloc(iping,ibeam),zloc(iping,ibeam))
+                %fprintf('alt bottom pick for ping %d beam %d is %4.2f,%4.2f,%4.2f \n',...
+                %    iping,ibeam,xloc(iping,ibeam),yloc(iping,ibeam),zloc(iping,ibeam))
             else
                 zloc(iping,ibeam)=alt_zloc;
                 yloc(iping,ibeam)=alt_yloc;
-                fprintf('resetting bottom pick for ping %d beam %d is %4.2f,%4.2f,%4.2f \n',...
-                    iping,ibeam,xloc(iping,ibeam),yloc(iping,ibeam),zloc(iping,ibeam))
+                %fprintf('resetting bottom pick for ping %d beam %d is %4.2f,%4.2f,%4.2f \n',...
+                %    iping,ibeam,xloc(iping,ibeam),yloc(iping,ibeam),zloc(iping,ibeam))
             end
         end
 
@@ -290,8 +329,11 @@ for iping=1:pDgms
         botInd(iping,ibeam)=indBot;
         % average water column backscatter above bottom
         avgTS(iping,ibeam)=mean(TT(ibeam,1:indBot,iping));
+        maxTS(iping,ibeam)=max(TT(ibeam,1:indBot-10,iping));
+        copyTT(ibeam,indBot-40:end,iping)=NaN;
         % also average water column backscatter above first ringing ping
-        avgTSabovering(iping,ibeam)=mean(TT(ibeam,1:indBot,iping));
+        avgTSabovering(iping,ibeam)=mean(TT(ibeam,1:indRing,iping));
+        maxTSabovering(iping,ibeam)=max(TT(ibeam,1:indRing,iping));
 
     end
 end
@@ -302,12 +344,12 @@ pcolor(xloc,yloc,avgTS)
 shading flat
 set(gca,'fontname','Times'); 
 if sscanf(version('-release'),'%d')<2022
-    caxis([-140 -40]); colorbar %#ok<CAXIS>
+    caxis([-120 -60]); colorbar %#ok<CAXIS>
 else
-    %clim([-140 -40]); colorbar    
-    clim(tsclims); colorbar    
+    clim([-120 -60]); colorbar    
+    %clim(tsclims); colorbar    
 end
-title(['run ' fileinfo{1} ': starts at ' startstr ': TS'])
+title(['run ' fileinfo{1} ': start ' startstr ': average TS above bottom'])
 xlabel('estimated distance along track (m)')
 ylabel('cross distance (m)')
 
@@ -317,14 +359,82 @@ pcolor(xloc,yloc,avgTSabovering)
 shading flat
 set(gca,'fontname','Times'); 
 if sscanf(version('-release'),'%d')<2022
+    caxis([-120 -60]); colorbar %#ok<CAXIS>
+else
+    clim([-120 -60]); colorbar    
+    %clim(tsclims); colorbar    
+end
+title(['run ' fileinfo{1} ': start ' startstr ': average TS above arc'])
+xlabel('estimated distance along track (m)')
+ylabel('cross distance (m)')
+
+
+figure(15)
+pcolor(xloc,yloc,maxTS)
+shading flat
+set(gca,'fontname','Times'); 
+if sscanf(version('-release'),'%d')<2022
     caxis([-140 -40]); colorbar %#ok<CAXIS>
 else
     %clim([-140 -40]); colorbar    
     clim(tsclims); colorbar    
 end
-title(['run ' fileinfo{1} ': starts at ' startstr ': TS'])
+title(['run ' fileinfo{1} ': start ' startstr ': max TS above bottom'])
 xlabel('estimated distance along track (m)')
 ylabel('cross distance (m)')
+
+
+figure(16)
+pcolor(xloc,yloc,maxTSabovering)
+shading flat
+set(gca,'fontname','Times'); 
+if sscanf(version('-release'),'%d')<2022
+    caxis([-140 -40]); colorbar %#ok<CAXIS>
+else
+    %clim([-140 -40]); colorbar    
+    clim(tsclims); colorbar    
+end
+title(['run ' fileinfo{1} ': start ' startstr ': max TS above arc'])
+xlabel('estimated distance along track (m)')
+ylabel('cross distance (m)')
+
+% figures 17 and 18 up top
+figure(19)
+surf(xloc,yloc,-zloc,maxTSabovering)
+shading flat
+colorbar
+grid on
+view(120,55)
+xlabel('x dist')
+ylabel('y dist')
+zlabel('z dist')
+title(['run ' fileinfo{1} ': start ' startstr ': max TS above arc'])
+
+figure(20)
+surf(xloc,yloc,-zloc,avgTSabovering)
+shading flat
+colorbar
+grid on
+view(120,55)
+xlabel('x dist')
+ylabel('y dist')
+zlabel('z dist')
+title(['run ' fileinfo{1} ': start ' startstr ': average TS above arc'])
+
+figure(21)
+surf(xloc,yloc,-zloc,maxTSabovering)
+shading flat
+hold on
+dBlevel=-50;
+hival=copyTT>dBlevel;
+scatter3(XX(hival),YY(hival),-ZZ(hival),ZZ(hival),TT(hival))
+grid on
+hold off
+view(120,55)
+xlabel('x dist')
+ylabel('y dist')
+zlabel('z dist')
+title(['run ' fileinfo{1} ': start ' startstr ': TS > ' num2str(dBlevel)])
 
 %figure(xx)
 %p = patch(isosurface(XX,YY,ZZ,SV,-80));
