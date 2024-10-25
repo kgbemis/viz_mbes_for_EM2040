@@ -138,6 +138,8 @@ filelocation = '../../OET/sentry_NA165/';
 %filename='20240919_015708_sentry.kmwcd';
 filename='20240919_015519_sentry.kmwcd';
 filename2=[];
+%filename='20240918_214503_sentry.kmwcd';
+%filename2='20240918_214503_sentry.kmall';
 
 fname = fullfile(filelocation,filename);
 fprintf('reading file: %s \n',fname)
