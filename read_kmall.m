@@ -68,7 +68,7 @@ maxWCSampIdx=max(maxSamps(startDgm:endDgm));
     fprintf('maximum number samples for all pings = %d\n',max(maxSamps))
     fprintf('maximum number samples for pings to read = %d\n',maxWCSampIdx)
 
-% store all data in structure so can manipulate elsewher
+% store all data in structure so can manipulate elsewhere
 
 
     
