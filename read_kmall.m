@@ -68,6 +68,42 @@ maxWCSampIdx=max(maxSamps(startDgm:endDgm));
     fprintf('maximum number samples for all pings = %d\n',max(maxSamps))
     fprintf('maximum number samples for pings to read = %d\n',maxWCSampIdx)
 
+
+% check if any datagrams are split
+DatagramNum=zeros(totalNdgm,1);
+NumDatagrams=zeros(totalNdgm,1);
+for idgm=1:totalNdgm 
+    % partition - has the datagram number and split info
+    DatagramNum(idgm)=wcdat(idgm).partition.dgmNum;
+    NumDatagrams(idgm)=wcdat(idgm).partition.numOfDgms;
+    if DatagramNum ~= NumDatagrams
+        fprintf('datagram %d is %dth partition of a datagram \n',idgm,DatagramNum)
+    end
+    if NumDatagrams>1
+        fprintf('WARNING: may be a split datagram at %d \n',idgm)
+    end
+end
+
+
+%    % cmnPart - not sure if will need this info
+%    % txInfo - not sure if will need this info
+%        NumSectors=wcdat(idgm).txInfo.numTxSectors;
+%        switch NumSectors
+%            case 1
+%                cenSec=1;
+%            case 2
+%                cenSec=1;
+%            case 3
+%                cenSec=2;
+%        end
+ %   % sectorData - not sure if will need this info
+ %       % EM2040 tranmits in multiple sectors -- need to check how actually
+ %       % set up - could be a 3-sector or 4-sector or other
+ %       TxBeamWidth=zeros(NumSectors,1);
+ %       for isec=1:NumSectors
+ %           TxBeamWidth(isec)=wcdat(idgm).sectorData(isec).txBeamWidthAlong_deg;
+ %       end
+
 % store all data in structure so can manipulate elsewhere
 
 
