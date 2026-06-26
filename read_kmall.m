@@ -72,17 +72,35 @@ maxWCSampIdx=max(maxSamps(startDgm:endDgm));
 % check if any datagrams are split
 DatagramNum=zeros(totalNdgm,1);
 NumDatagrams=zeros(totalNdgm,1);
+part_count=0;
+split_count=0;
 for idgm=1:totalNdgm 
     % partition - has the datagram number and split info
     DatagramNum(idgm)=wcdat(idgm).partition.dgmNum;
     NumDatagrams(idgm)=wcdat(idgm).partition.numOfDgms;
     if DatagramNum ~= NumDatagrams
         fprintf('datagram %d is %dth partition of a datagram \n',idgm,DatagramNum)
+        part_count=part_count+1;
     end
     if NumDatagrams>1
         fprintf('WARNING: may be a split datagram at %d \n',idgm)
+        split_count=split_count+1;
     end
 end
+if split_count~=0 & part_count~=0
+    fprintf('Potentially %d split datagrams\n',max([split_count part_count]))
+else
+    fprintf('No split datagrams detected\n')
+end
+
+
+% structure for rest 
+% loop over all datagrams (or all that want to read)
+%     read amplitude data
+%     store data in wcdat
+%     store any metadata pulled from kmall rather than kmwcd in wcdat
+% maybe end loop
+% save data
 
 
 %    % cmnPart - not sure if will need this info
@@ -103,10 +121,31 @@ end
  %       for isec=1:NumSectors
  %           TxBeamWidth(isec)=wcdat(idgm).sectorData(isec).txBeamWidthAlong_deg;
  %       end
+ %   % rxInfo - not sure if will need this info
+ %   SoundSpeed=wcdat(idgm).rxInfo.soundVelocity_mPerSec;
+ %   SampFreq=wcdat(idgm).rxInfo.sampleFreq_Hz;
+ %   TVGFuncApplied=wcdat(idgm).rxInfo.TVGfunctionApplied;
+ %   TVGOffset=wcdat(idgm).rxInfo.TVGoffset_dB;
+ %       %RxBeamWidth=wcdat(iping).rxInfo.nothere    beamAngle=wcdat(i).beamData_p.beamPointAngReVertical_deg;
+ %   startRangeSampNum=wcdat(idgm).beamData_p.startRangeSampleNum;
+ %   numSamps=wcdat(idgm).beamData_p.numSampleData; % not sure this is correct
+ %   % maxWCSampIdx=numSamps(1); % actually need this to be the max, max 
+%    %       so set it outside this loop
+%    xmitSectNum=wcdat(idgm).beamData_p.beamTxSectorNum;
+%    %beamNum=wcdat(i).beamData_p.?  ask Liz what this is
+%    %beamAmp - need to read from binary file still
+%    beamAmpdata=read_bin_kmall(fname,wcdat(idgm));
+%    %DR huh?
+%    Nrx=wcdat(idgm).rxInfo.numBeams;
+%        fprintf('number of beams = %d \n',Nrx)
+%    beamAngle=wcdat(idgm).beamData_p.beamPointAngReVertical_deg';
+%    DR=wcdat(idgm).beamData_p.detectedRangeInSamples; % no idea if this makes sense
+%    beamAmp=zeros(Nrx,1);
+%    for ibeam=1:Nrx
+%        tempBeamAmp=beamAmpdata(ibeam).sampleAmplitude05dB_p;
+%        beamAmp(ibeam,1:numSamps(ibeam))=tempBeamAmp;
+%    end
+%    wcdat(idgm).beamData_p.beamAmp=beamAmp;
+
 
 % store all data in structure so can manipulate elsewhere
-
-
-    
-
-
