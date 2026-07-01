@@ -1,4 +1,4 @@
-function y=read_kmall(datadir,filename,filename2)
+function y=read_kmall(datadir,filename,filename2,startDgm,endDgm,outdir)
 % function y=read_kmall(datadir,filename,filename2)
 %    reads an EM2040 file, collects metadata, saves metadata and data into
 %       structure and file
@@ -6,6 +6,8 @@ function y=read_kmall(datadir,filename,filename2)
 %       datadir = directory in which file(s) reside
 %       filename = name of file containing the kmwcd data
 %       filename2 = name of kmall file with other data
+%       startDgm = datagram (ping) count to start at (can be [])
+%       endDgm = datagram (ping) count to end at (can be [])
 %
 
 % set kmwcd file name
@@ -47,26 +49,35 @@ pingcount=arrayfun(@(x) x.cmnPart.pingCnt,wcdat);
 numbeams=arrayfun(@(x) x.rxInfo.numBeams,wcdat);
 fprintf('ping labels run from %d to %d \n',pingcount(1),pingcount(end))
 
-% set which datagrams will pull
-% for now do full file (ok for UNH exp data)
-Ndgm=totalNdgm; 
-startDgm=1;
-endDgm=Ndgm;
+% check that which datagrams to pull is already set (and set if it is not)
+% default if not pre-set, is to pull all datagrams
+if isempty(startDgm)
+    startDgm=1;
+end
+if isempty(endDgm)
+    Ndgm=totalNdgm-startDgm+1; 
+    endDgm=Ndgm;
+else
+    Ndgm=endDgm-startDgm+1;
+end
 
 % need to know buffer size in order to do all setup
 numSamps1=wcdat(1).beamData_p.numSampleData; % not sure this is correct
 maxWCSampIdx1=numSamps1(1);
     fprintf('number samples (ping 1, beam 1) = %d\n',maxWCSampIdx1)
 maxSamps=zeros(Ndgm,1);
+minSamps=zeros(Ndgm,1);
 keepSamps=zeros(ckNrx(1),totalNdgm);
 for i=1:totalNdgm
     numSamps=wcdat(i).beamData_p.numSampleData;
     maxSamps(i)=max(numSamps);
+    minSamps(i)=min(numSamps);
     keepSamps(:,i)=numSamps;
 end
 maxWCSampIdx=max(maxSamps(startDgm:endDgm));
     fprintf('maximum number samples for all pings = %d\n',max(maxSamps))
     fprintf('maximum number samples for pings to read = %d\n',maxWCSampIdx)
+    fprintf('maximum variation in number of samples within a single ping = %d \n',max(maxSamps-minSamps))
 
 
 % check if any datagrams are split
@@ -92,6 +103,8 @@ if split_count~=0 & part_count~=0
 else
     fprintf('No split datagrams detected\n')
 end
+% this section will need more info output if any split datagrams are
+% detected 
 
 
 % structure for rest 
@@ -147,5 +160,31 @@ end
 %    end
 %    wcdat(idgm).beamData_p.beamAmp=beamAmp;
 
+% probably need to pad out the beamAmp records here? or not? let's try not
+% for now
+% some thoughts from google/MatlabCentral on better padding operation:
+%   >> D = {[1,2,3,4],[5,6],[7,8,9]};
+%   >> M = zeros(5,5);
+%   >> for k = 1:numel(D), M(k,1:numel(D{k})) = D{k}; end
+%   >> M
+%   M =
+%     1  2  3  4  0
+%     5  6  0  0  0
+%     7  8  9  0  0
+%     0  0  0  0  0
+%     0  0  0  0  0
+% this requires knowing the largest vector length but I already get and
+% need that 
+% I think it makes more sense than 
+%   beamAmp = [beamAmp zeros(Nrx,maxWCSampIdx-length(beamAmp(1,:)))-999];
+% which I think assumes that all beams have same number of samples
+%
+% should be able to implement new method above when pull beamAmp data
+% originally
 
 % store all data in structure so can manipulate elsewhere
+[~,filecode,~]=fileparts(fname);
+sampinfofile=fullfile(outdir,['sampinfo_' filecode '.mat']);
+save(sampinfofile,'maxSamps','minSamps','keepSamps')
+
+
