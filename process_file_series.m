@@ -7,7 +7,12 @@ datadir='../../UNH_data/UNH_EM2040_40_Apr_13_2023/';
 filelist=dir(fullfile(datadir,'*.kmwcd'));
 Nfiles=length(filelist);
 
-for i=1:Nfiles
+% set file number to start or stop at
+istart=50;
+iend=Nfiles;
+
+% this section pulls central frequency information
+for i=istart:iend
     % get ith kmwcd filename
     kmwcdfile=filelist(i).name;
     [~,filecode,~]=fileparts(kmwcdfile);
@@ -26,5 +31,9 @@ for i=1:Nfiles
     % as of 6/29/26, get_kmwcd_freq only prints to screen
     pause
 end
+
+% need to add sections to extract data and pull characteristics from
+% extracted data
+% may want a switch structure to choose between
 
 
