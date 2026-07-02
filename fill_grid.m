@@ -6,15 +6,15 @@ function fill_grid()
 
 % input data needed
 % variable      units       source
-% SoundSpeed    m/s
-% SampFreq      ?
-% beamAmp       ?
+% SoundSpeed    m/s         rxInfo.soundVelocity_mPerSec
+% SampFreq      Hz          rxInfo.sampleFreq_Hz
+% Nrx           --          rxInfo.numBeams
 % beamAngle     degrees
+% beamAmp       ?
 % RxBeamWidth   degrees
 % TxBeamWidth   degrees
 % TVGFuncApplied
 % TVGOffset
-% Nrx
 
 % import combined metadata and water column data structure
 

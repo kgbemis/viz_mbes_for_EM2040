@@ -115,18 +115,25 @@ end
 % maybe end loop
 % save data
 
+% setup vectors for storage
+SoundSpeed=zeros(Ndgm,1);
+SampFreq=zeros(Ndgm,1);
+Nrx=zeros(Ndgm,1);
 
-%    % cmnPart - not sure if will need this info
-%    % txInfo - not sure if will need this info
-%        NumSectors=wcdat(idgm).txInfo.numTxSectors;
-%        switch NumSectors
-%            case 1
-%                cenSec=1;
-%            case 2
-%                cenSec=1;
-%            case 3
-%                cenSec=2;
-%        end
+% loop over set datagrams
+for idgm=startDgm:endDgm
+
+    % first get all the 
+    % txInfo - get the number of sectors and set the center sector
+        NumSectors=wcdat(idgm).txInfo.numTxSectors;
+        switch NumSectors
+            case 1
+                cenSec=1;
+            case 2
+                cenSec=1;
+            case 3
+                cenSec=2;
+        end
  %   % sectorData - not sure if will need this info
  %       % EM2040 tranmits in multiple sectors -- need to check how actually
  %       % set up - could be a 3-sector or 4-sector or other
@@ -135,23 +142,19 @@ end
  %           TxBeamWidth(isec)=wcdat(idgm).sectorData(isec).txBeamWidthAlong_deg;
  %       end
  %   % rxInfo - not sure if will need this info
- %   SoundSpeed=wcdat(idgm).rxInfo.soundVelocity_mPerSec;
- %   SampFreq=wcdat(idgm).rxInfo.sampleFreq_Hz;
+    SoundSpeed(idgm)=wcdat(idgm).rxInfo.soundVelocity_mPerSec;
+    SampFreq(idgm)=wcdat(idgm).rxInfo.sampleFreq_Hz;
+    Nrx(idgm)=wcdat(idgm).rxInfo.numBeams;
  %   TVGFuncApplied=wcdat(idgm).rxInfo.TVGfunctionApplied;
  %   TVGOffset=wcdat(idgm).rxInfo.TVGoffset_dB;
  %       %RxBeamWidth=wcdat(iping).rxInfo.nothere    beamAngle=wcdat(i).beamData_p.beamPointAngReVertical_deg;
  %   startRangeSampNum=wcdat(idgm).beamData_p.startRangeSampleNum;
  %   numSamps=wcdat(idgm).beamData_p.numSampleData; % not sure this is correct
- %   % maxWCSampIdx=numSamps(1); % actually need this to be the max, max 
-%    %       so set it outside this loop
 %    xmitSectNum=wcdat(idgm).beamData_p.beamTxSectorNum;
-%    %beamNum=wcdat(i).beamData_p.?  ask Liz what this is
-%    %beamAmp - need to read from binary file still
+
+% read beamAmp from binary file
 %    beamAmpdata=read_bin_kmall(fname,wcdat(idgm));
-%    %DR huh?
-%    Nrx=wcdat(idgm).rxInfo.numBeams;
-%        fprintf('number of beams = %d \n',Nrx)
-%    beamAngle=wcdat(idgm).beamData_p.beamPointAngReVertical_deg';
+%    beamAngle(idgm,:)=wcdat(idgm).beamData_p.beamPointAngReVertical_deg';
 %    DR=wcdat(idgm).beamData_p.detectedRangeInSamples; % no idea if this makes sense
 %    beamAmp=zeros(Nrx,1);
 %    for ibeam=1:Nrx
@@ -182,9 +185,25 @@ end
 % should be able to implement new method above when pull beamAmp data
 % originally
 
+end
+
 % store all data in structure so can manipulate elsewhere
+% extract filecode for building output filenames
 [~,filecode,~]=fileparts(fname);
+% save number of sample information
 sampinfofile=fullfile(outdir,['sampinfo_' filecode '.mat']);
 save(sampinfofile,'maxSamps','minSamps','keepSamps')
-
+% save key metadata to see if changes ever
+keymetafile=fullfile(outdir,['keymeta_' filecode '.mat']);
+save(keymetafile,'SoundSpeed','SampFreq','Nrx')
+% store necessary metadata for gridding
+gridmeta.SoundSpeed=SoundSpeed; % 1-D vector
+gridmeta.SampFreq=SampFreq; % 1-D vector
+%gridmeta.beamAngle=beamAngle; % 2-D grid
+gridmeta.numBeams=Nrx; % 1-D vector
+% RxBeamWidth   degrees
+% TxBeamWidth   degrees
+% TVGFuncApplied
+% TVGOffset
+% beamAmp
 
