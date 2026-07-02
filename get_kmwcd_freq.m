@@ -58,15 +58,18 @@ numSamps1=wcdat(1).beamData_p.numSampleData; % not sure this is correct
 maxWCSampIdx1=numSamps1(1);
     fprintf('number samples (ping 1, beam 1) = %d\n',maxWCSampIdx1)
 maxSamps=zeros(Ndgm,1);
+minSamps=zeros(Ndgm,1);
 keepSamps=zeros(ckNrx(1),totalNdgm);
 for i=1:totalNdgm
     numSamps=wcdat(i).beamData_p.numSampleData;
     maxSamps(i)=max(numSamps);
+    minSamps(i)=min(numSamps);
     keepSamps(:,i)=numSamps;
 end
 maxWCSampIdx=max(maxSamps(startDgm:endDgm));
     fprintf('maximum number samples for all pings = %d\n',max(maxSamps))
     fprintf('maximum number samples for pings to read = %d\n',maxWCSampIdx)
+    fprintf('maximum variation in number of samples within a single ping = %d \n',max(maxSamps-minSamps))
 
 
 % check if any datagrams are split
@@ -92,6 +95,11 @@ if split_count~=0 & part_count~=0
 else
     fprintf('No split datagrams detected\n')
 end
+
+% store number of samples information so can manipulate elsewhere
+[~,filecode,~]=fileparts(fname);
+sampinfofile=fullfile(outdir,['cksampinfo_' filecode '.mat']);
+save(sampinfofile,'maxSamps','minSamps','keepSamps')
 
 % nothing more as this file just to spit out basic information like
 % frequency
