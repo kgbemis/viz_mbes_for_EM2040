@@ -11,6 +11,12 @@ Nfiles=length(filelist);
 istart=50;
 iend=Nfiles;
 
+% set output directory and flag to create output
+% if dooutput=0, outdir can be []
+% if dooutput=1, outdir must be a writable directory
+dooutput=0;
+outdir=[];
+
 % this section pulls central frequency information
 for i=istart:iend
     % get ith kmwcd filename
@@ -25,7 +31,7 @@ for i=istart:iend
     end
 
     % pull metadata and print to screen
-    get_kmwcd_freq(datadir,kmwcdfile,kmallfile)
+    get_kmwcd_freq(datadir,kmwcdfile,kmallfile,dooutput,outdir)
 
     % pause before next one so can enter data in spreadsheet
     % as of 6/29/26, get_kmwcd_freq only prints to screen

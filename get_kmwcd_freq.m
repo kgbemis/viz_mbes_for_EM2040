@@ -1,4 +1,4 @@
-function get_kmwcd_freq(datadir,filename,filename2)
+function get_kmwcd_freq(datadir,filename,filename2,dooutput,outdir)
 % function y=read_kmall(datadir,filename,filename2)
 %    reads an EM2040 file, collects metadata, saves metadata and data into
 %       structure and file
@@ -6,7 +6,8 @@ function get_kmwcd_freq(datadir,filename,filename2)
 %       datadir = directory in which file(s) reside
 %       filename = name of file containing the kmwcd data
 %       filename2 = name of kmall file with other data
-%
+%       dooutput = {0,1} = sets whether to save sample information or not
+%       outdir = directory to put output into (can be [] if dooutput=0)
 
 % set kmwcd file name
 fname = fullfile(datadir,filename);
@@ -96,10 +97,12 @@ else
     fprintf('No split datagrams detected\n')
 end
 
+if dooutput
 % store number of samples information so can manipulate elsewhere
 [~,filecode,~]=fileparts(fname);
 sampinfofile=fullfile(outdir,['cksampinfo_' filecode '.mat']);
 save(sampinfofile,'maxSamps','minSamps','keepSamps')
+end
 
 % nothing more as this file just to spit out basic information like
 % frequency
