@@ -13,8 +13,8 @@ function y=read_kmall(datadir,filename,filename2,startDgm,endDgm,outdir)
 % set kmwcd file name
 fname = fullfile(datadir,filename);
 
-% get basic information about 
-KMALLfileinfo = CFF_kmall_file_info(fname);
+% get basic information about file but may not need this
+%KMALLfileinfo = CFF_kmall_file_info(fname);
 
 % read metadata from kmwcd file
 KMALLdata = CFF_read_kmall(fname);
@@ -24,6 +24,7 @@ wcdat=KMALLdata.EMdgmMWC;  % water column metadata
 if ~isempty(filename2)
     fname2 = fullfile(datadir,filename2);
     KMALLdata2 = CFF_read_kmall(fname2);
+    KMALLdata2.EMdgmMRZ
 end % isempty 
 
 % check and print basic file information
@@ -37,8 +38,8 @@ fprintf('central frequency of center sector = %4.0f kHz \n',...
 
 % pull most of setup data
 totalNdgm=length(wcdat);
-ckNrx=arrayfun(@(x) x.rxInfo.numBeams,wcdat);
-if abs(mean(diff(ckNrx)))>0
+Nrx=arrayfun(@(x) x.rxInfo.numBeams,wcdat);
+if abs(mean(diff(Nrx)))>0
     fprintf('WARNING: inconsistent number of beams across datagrams\n')
 end
 posixtimes=arrayfun(@(x) x.header.time_sec,wcdat);
@@ -47,6 +48,8 @@ numOfDgms= arrayfun(@(x) x.partition.numOfDgms,wcdat);
 dgmNum= arrayfun(@(x) x.partition.dgmNum,wcdat);
 pingcount=arrayfun(@(x) x.cmnPart.pingCnt,wcdat);
 numbeams=arrayfun(@(x) x.rxInfo.numBeams,wcdat);
+numsectors=arrayfun(@(x) x.txInfo.numTxSectors,wcdat);
+    maxNumSectors=max(numsectors);
 fprintf('ping labels run from %d to %d \n',pingcount(1),pingcount(end))
 
 % check that which datagrams to pull is already set (and set if it is not)
@@ -67,7 +70,7 @@ maxWCSampIdx1=numSamps1(1);
     fprintf('number samples (ping 1, beam 1) = %d\n',maxWCSampIdx1)
 maxSamps=zeros(Ndgm,1);
 minSamps=zeros(Ndgm,1);
-keepSamps=zeros(ckNrx(1),totalNdgm);
+keepSamps=zeros(Nrx(1),totalNdgm);
 for i=1:totalNdgm
     numSamps=wcdat(i).beamData_p.numSampleData;
     maxSamps(i)=max(numSamps);
@@ -118,13 +121,18 @@ end
 % setup vectors for storage
 SoundSpeed=zeros(Ndgm,1);
 SampFreq=zeros(Ndgm,1);
-Nrx=zeros(Ndgm,1);
+TVGFuncApplied=zeros(Ndgm,1);
+TVGOffset=zeros(Ndgm,1);
+TxBeamWidth=zeros(Ndgm,maxNumSectors);
 
 % loop over set datagrams
 for idgm=startDgm:endDgm
 
     % first get all the 
     % txInfo - get the number of sectors and set the center sector
+    % sectorData
+        % EM2040 tranmits in multiple sectors -- need to check how actually
+        % set up - could be a 3-sector or 4-sector or other    
         NumSectors=wcdat(idgm).txInfo.numTxSectors;
         switch NumSectors
             case 1
@@ -133,21 +141,23 @@ for idgm=startDgm:endDgm
                 cenSec=1;
             case 3
                 cenSec=2;
+            otherwise
+                fprintf('unexpected number of sectors\n')
+                cenSec=1;  %arbitrary choice just so set
         end
- %   % sectorData - not sure if will need this info
- %       % EM2040 tranmits in multiple sectors -- need to check how actually
- %       % set up - could be a 3-sector or 4-sector or other
- %       TxBeamWidth=zeros(NumSectors,1);
- %       for isec=1:NumSectors
- %           TxBeamWidth(isec)=wcdat(idgm).sectorData(isec).txBeamWidthAlong_deg;
- %       end
- %   % rxInfo - not sure if will need this info
+        % also need the transmit beamwidth
+        for isec=1:NumSectors
+            TxBeamWidth(idgm,isec)=wcdat(idgm).sectorData(isec).txBeamWidthAlong_deg;
+        end
+ 
+ % rxInfo 
+ %  already have Nrx = numbeams from above
+ %  could probably move all of this up there too (out of loop!)
     SoundSpeed(idgm)=wcdat(idgm).rxInfo.soundVelocity_mPerSec;
     SampFreq(idgm)=wcdat(idgm).rxInfo.sampleFreq_Hz;
-    Nrx(idgm)=wcdat(idgm).rxInfo.numBeams;
- %   TVGFuncApplied=wcdat(idgm).rxInfo.TVGfunctionApplied;
- %   TVGOffset=wcdat(idgm).rxInfo.TVGoffset_dB;
- %       %RxBeamWidth=wcdat(iping).rxInfo.nothere    beamAngle=wcdat(i).beamData_p.beamPointAngReVertical_deg;
+    TVGFuncApplied(idgm)=wcdat(idgm).rxInfo.TVGfunctionApplied;
+    TVGOffset(idgm)=wcdat(idgm).rxInfo.TVGoffset_dB;
+
  %   startRangeSampNum=wcdat(idgm).beamData_p.startRangeSampleNum;
  %   numSamps=wcdat(idgm).beamData_p.numSampleData; % not sure this is correct
 %    xmitSectNum=wcdat(idgm).beamData_p.beamTxSectorNum;
@@ -195,7 +205,8 @@ sampinfofile=fullfile(outdir,['sampinfo_' filecode '.mat']);
 save(sampinfofile,'maxSamps','minSamps','keepSamps')
 % save key metadata to see if changes ever
 keymetafile=fullfile(outdir,['keymeta_' filecode '.mat']);
-save(keymetafile,'SoundSpeed','SampFreq','Nrx')
+save(keymetafile,'SoundSpeed','SampFreq','Nrx','TVGFuncApplied',...
+    'TVGOffset','TxBeamWidth')
 % store necessary metadata for gridding
 gridmeta.SoundSpeed=SoundSpeed; % 1-D vector
 gridmeta.SampFreq=SampFreq; % 1-D vector

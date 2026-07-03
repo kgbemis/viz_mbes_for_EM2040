@@ -5,16 +5,16 @@ function fill_grid()
 % recombined
 
 % input data needed
-% variable      units       source
-% SoundSpeed    m/s         rxInfo.soundVelocity_mPerSec
-% SampFreq      Hz          rxInfo.sampleFreq_Hz
+% variable      units       source                          used for
+% SoundSpeed    m/s         rxInfo.soundVelocity_mPerSec    range
+% SampFreq      Hz          rxInfo.sampleFreq_Hz            range
 % Nrx           --          rxInfo.numBeams
-% beamAngle     degrees
+% TVGFuncApplied ?          rxInfo.TVGfunctionApplied       TS
+% TVGOffset      dB         rxInfo.TVGoffset_dB             TS
+% beamAngle     degrees                                     x,z
 % beamAmp       ?
 % RxBeamWidth   degrees
 % TxBeamWidth   degrees
-% TVGFuncApplied
-% TVGOffset
 
 % import combined metadata and water column data structure
 
@@ -45,12 +45,12 @@ for idgm=startDgm:endDgm  % just do the first ping for now
     pingTime(pingidx) = thistime;    % datetime
     elapsedsec=pingTime(pingidx)-pingTime(1);
 
-    % what is this doing
+    % what is this doing - padding array - will probably not need here
     beamAmp = [beamAmp zeros(Nrx,maxWCSampIdx-length(beamAmp(1,:)))-999];
 
     % range in meters
     range = (1:(length(beamAmp(1,:))))*SoundSpeed/2/SampFreq;
-    % pad with zeros out to the maximum range
+    % pad with zeros out to the maximum range - also not need to pad here
     range = [range zeros(1,maxWCSampIdx-length(range))];   
 
     % this is depth
