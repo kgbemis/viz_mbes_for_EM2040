@@ -12,6 +12,7 @@ Nrx=keymeta.Nrx;
 TVGFuncApplied=keymeta.TVGFuncApplied;
 TVGOffset=keymeta.TVGOffset;
 TxBeamWidth=keymeta.TxBeamWidth;
+startRangeSampNum=keymeta.startRangeSampNum;
 
 Npings=length(SoundSpeed);
 
@@ -60,10 +61,10 @@ cb.Label.String='Transmit Beam Width (degrees)';
 title(datalabel)
 
 % next tile
-%nexttile
-%pcolor(allSamps)
-%shading flat
-%colorbar
-%title(datalabel)
-%xlabel('ping number')
-%ylabel('beam number')
+nexttile
+pcolor(startRangeSampNum)
+shading flat
+colorbar
+title(datalabel)
+xlabel('ping number')
+ylabel('beam number')

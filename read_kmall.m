@@ -124,6 +124,7 @@ SampFreq=zeros(Ndgm,1);
 TVGFuncApplied=zeros(Ndgm,1);
 TVGOffset=zeros(Ndgm,1);
 TxBeamWidth=zeros(Ndgm,maxNumSectors);
+startRangeSampNum=zeros(Ndgm,max(numbeams));
 
 % loop over set datagrams
 for idgm=startDgm:endDgm
@@ -150,15 +151,17 @@ for idgm=startDgm:endDgm
             TxBeamWidth(idgm,isec)=wcdat(idgm).sectorData(isec).txBeamWidthAlong_deg;
         end
  
- % rxInfo 
- %  already have Nrx = numbeams from above
- %  could probably move all of this up there too (out of loop!)
+% rxInfo 
+%  already have Nrx = numbeams from above
+%  could probably move all of this up there too (out of loop!)
     SoundSpeed(idgm)=wcdat(idgm).rxInfo.soundVelocity_mPerSec;
     SampFreq(idgm)=wcdat(idgm).rxInfo.sampleFreq_Hz;
     TVGFuncApplied(idgm)=wcdat(idgm).rxInfo.TVGfunctionApplied;
     TVGOffset(idgm)=wcdat(idgm).rxInfo.TVGoffset_dB;
 
- %   startRangeSampNum=wcdat(idgm).beamData_p.startRangeSampleNum;
+% beamData_p
+    startRangeSampNum(idgm,:)=wcdat(idgm).beamData_p.startRangeSampleNum;
+
  %   numSamps=wcdat(idgm).beamData_p.numSampleData; % not sure this is correct
 %    xmitSectNum=wcdat(idgm).beamData_p.beamTxSectorNum;
 
@@ -206,7 +209,7 @@ save(sampinfofile,'maxSamps','minSamps','keepSamps')
 % save key metadata to see if changes ever
 keymetafile=fullfile(outdir,['keymeta_' filecode '.mat']);
 save(keymetafile,'SoundSpeed','SampFreq','Nrx','TVGFuncApplied',...
-    'TVGOffset','TxBeamWidth')
+    'TVGOffset','TxBeamWidth','startRangeSampNum')
 % store necessary metadata for gridding
 gridmeta.SoundSpeed=SoundSpeed; % 1-D vector
 gridmeta.SampFreq=SampFreq; % 1-D vector
