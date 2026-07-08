@@ -44,13 +44,14 @@ if abs(mean(diff(Nrx)))>0
 end
 posixtimes=arrayfun(@(x) x.header.time_sec,wcdat);
 tnanosec=arrayfun(@(x) x.header.time_nanosec,wcdat);
-numOfDgms= arrayfun(@(x) x.partition.numOfDgms,wcdat);
-dgmNum= arrayfun(@(x) x.partition.dgmNum,wcdat);
 pingcount=arrayfun(@(x) x.cmnPart.pingCnt,wcdat);
 numbeams=arrayfun(@(x) x.rxInfo.numBeams,wcdat);
 numsectors=arrayfun(@(x) x.txInfo.numTxSectors,wcdat);
     maxNumSectors=max(numsectors);
 fprintf('ping labels run from %d to %d \n',pingcount(1),pingcount(end))
+% following could be here but currently set later
+%numOfDgms= arrayfun(@(x) x.partition.numOfDgms,wcdat);
+%dgmNum= arrayfun(@(x) x.partition.dgmNum,wcdat);
 
 % check that which datagrams to pull is already set (and set if it is not)
 % default if not pre-set, is to pull all datagrams
@@ -125,6 +126,7 @@ TVGFuncApplied=zeros(Ndgm,1);
 TVGOffset=zeros(Ndgm,1);
 TxBeamWidth=zeros(Ndgm,maxNumSectors);
 startRangeSampNum=zeros(Ndgm,max(numbeams));
+xmitSectNum=zeros(Ndgm,max(numbeams));
 
 % loop over set datagrams
 for idgm=startDgm:endDgm
@@ -161,9 +163,11 @@ for idgm=startDgm:endDgm
 
 % beamData_p
     startRangeSampNum(idgm,:)=wcdat(idgm).beamData_p.startRangeSampleNum;
+        % in practice, this may always be 0
+        % should check and adjust range calculations based on this
 
- %   numSamps=wcdat(idgm).beamData_p.numSampleData; % not sure this is correct
-%    xmitSectNum=wcdat(idgm).beamData_p.beamTxSectorNum;
+    % numSamps set outside this loop already so just use as numSamps(idgm)
+    xmitSectNum(idgm,:)=wcdat(idgm).beamData_p.beamTxSectorNum;
 
 % read beamAmp from binary file
 %    beamAmpdata=read_bin_kmall(fname,wcdat(idgm));
@@ -209,7 +213,7 @@ save(sampinfofile,'maxSamps','minSamps','keepSamps')
 % save key metadata to see if changes ever
 keymetafile=fullfile(outdir,['keymeta_' filecode '.mat']);
 save(keymetafile,'SoundSpeed','SampFreq','Nrx','TVGFuncApplied',...
-    'TVGOffset','TxBeamWidth','startRangeSampNum')
+    'TVGOffset','TxBeamWidth','startRangeSampNum','xmitSectNum')
 % store necessary metadata for gridding
 gridmeta.SoundSpeed=SoundSpeed; % 1-D vector
 gridmeta.SampFreq=SampFreq; % 1-D vector

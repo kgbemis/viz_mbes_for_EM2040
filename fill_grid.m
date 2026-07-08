@@ -49,6 +49,7 @@ for idgm=startDgm:endDgm  % just do the first ping for now
     beamAmp = [beamAmp zeros(Nrx,maxWCSampIdx-length(beamAmp(1,:)))-999];
 
     % range in meters
+    % this assumes that the starting sample number is always zero
     range = (1:(length(beamAmp(1,:))))*SoundSpeed/2/SampFreq;
     % pad with zeros out to the maximum range - also not need to pad here
     range = [range zeros(1,maxWCSampIdx-length(range))];   

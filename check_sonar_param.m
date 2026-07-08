@@ -13,6 +13,7 @@ TVGFuncApplied=keymeta.TVGFuncApplied;
 TVGOffset=keymeta.TVGOffset;
 TxBeamWidth=keymeta.TxBeamWidth;
 startRangeSampNum=keymeta.startRangeSampNum;
+xmitSectNum=keymeta.xmitSectNum;
 
 Npings=length(SoundSpeed);
 
@@ -64,7 +65,29 @@ title(datalabel)
 nexttile
 pcolor(startRangeSampNum)
 shading flat
-colorbar
+cb2=colorbar;
+cb2.Label.String='Starting Sample Number for Range';
 title(datalabel)
+ylabel('ping number')
+xlabel('beam number')
+
+% next tile
+nexttile
+pcolor(xmitSectNum)
+shading flat
+cb3=colorbar;
+cb3.Label.String='Xmit Sect Num';
+title(datalabel)
+ylabel('ping number')
+xlabel('beam number')
+
+figure(3)
+tiledlayout('horizontal')
+% next tile
+nexttile
+plot(TxBeamWidth)
+
 xlabel('ping number')
-ylabel('beam number')
+ylabel('Transmit Beam Width (degrees)')
+title(datalabel)
+
