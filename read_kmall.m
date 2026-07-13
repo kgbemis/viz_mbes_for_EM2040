@@ -30,9 +30,11 @@ end % isempty
 % check and print basic file information
 fprintf('reading KMWCD file: %s \n',fname)
 fprintf('start date = %s \n',...
-    datestr(datetime(wcdat(1).header.time_sec,'ConvertFrom','posixtime')))
+    datetime(wcdat(1).header.time_sec,'ConvertFrom','posixtime',...
+    'Format','dd-MM-yyyy HH:mm:ss'))
 fprintf('end date = %s \n',...
-    datestr(datetime(wcdat(end).header.time_sec,'ConvertFrom','posixtime')))
+    datetime(wcdat(end).header.time_sec,'ConvertFrom','posixtime',...
+    'Format','dd-MM-yyyy HH:mm:ss'))
 fprintf('central frequency of center sector = %4.0f kHz \n',...
     wcdat(1).sectorData(1).centreFreq_Hz./1000)
 
@@ -127,6 +129,8 @@ TVGOffset=zeros(Ndgm,1);
 TxBeamWidth=zeros(Ndgm,maxNumSectors);
 startRangeSampNum=zeros(Ndgm,max(numbeams));
 xmitSectNum=zeros(Ndgm,max(numbeams));
+beamAngle=zeros(Ndgm,max(numbeams));
+DR=zeros(Ndgm,max(numbeams));
 
 % loop over set datagrams
 for idgm=startDgm:endDgm
@@ -153,32 +157,32 @@ for idgm=startDgm:endDgm
             TxBeamWidth(idgm,isec)=wcdat(idgm).sectorData(isec).txBeamWidthAlong_deg;
         end
  
-% rxInfo 
-%  already have Nrx = numbeams from above
-%  could probably move all of this up there too (out of loop!)
-    SoundSpeed(idgm)=wcdat(idgm).rxInfo.soundVelocity_mPerSec;
-    SampFreq(idgm)=wcdat(idgm).rxInfo.sampleFreq_Hz;
-    TVGFuncApplied(idgm)=wcdat(idgm).rxInfo.TVGfunctionApplied;
-    TVGOffset(idgm)=wcdat(idgm).rxInfo.TVGoffset_dB;
+    % rxInfo 
+    %  already have Nrx = numbeams from above
+    %  could probably move all of this up there too (out of loop!)
+        SoundSpeed(idgm)=wcdat(idgm).rxInfo.soundVelocity_mPerSec;
+        SampFreq(idgm)=wcdat(idgm).rxInfo.sampleFreq_Hz;
+        TVGFuncApplied(idgm)=wcdat(idgm).rxInfo.TVGfunctionApplied;
+        TVGOffset(idgm)=wcdat(idgm).rxInfo.TVGoffset_dB;
+    
+    % beamData_p
+        startRangeSampNum(idgm,:)=wcdat(idgm).beamData_p.startRangeSampleNum;
+            % in practice, this may always be 0
+            % should check and adjust range calculations based on this
+    
+        % numSamps set outside this loop already so just use as numSamps(idgm)
+        xmitSectNum(idgm,:)=wcdat(idgm).beamData_p.beamTxSectorNum;
+        beamAngle(idgm,:)=wcdat(idgm).beamData_p.beamPointAngReVertical_deg';
+        DR(idgm,:)=wcdat(idgm).beamData_p.detectedRangeInSamples; 
 
-% beamData_p
-    startRangeSampNum(idgm,:)=wcdat(idgm).beamData_p.startRangeSampleNum;
-        % in practice, this may always be 0
-        % should check and adjust range calculations based on this
-
-    % numSamps set outside this loop already so just use as numSamps(idgm)
-    xmitSectNum(idgm,:)=wcdat(idgm).beamData_p.beamTxSectorNum;
-
-% read beamAmp from binary file
-%    beamAmpdata=read_bin_kmall(fname,wcdat(idgm));
-%    beamAngle(idgm,:)=wcdat(idgm).beamData_p.beamPointAngReVertical_deg';
-%    DR=wcdat(idgm).beamData_p.detectedRangeInSamples; % no idea if this makes sense
-%    beamAmp=zeros(Nrx,1);
-%    for ibeam=1:Nrx
-%        tempBeamAmp=beamAmpdata(ibeam).sampleAmplitude05dB_p;
-%        beamAmp(ibeam,1:numSamps(ibeam))=tempBeamAmp;
-%    end
-%    wcdat(idgm).beamData_p.beamAmp=beamAmp;
+    % read beamAmp from binary file
+    %beamAmpdata=read_bin_kmall(fname,wcdat(idgm));
+    %    beamAmp=zeros(Nrx,1);
+    %    for ibeam=1:Nrx
+    %        tempBeamAmp=beamAmpdata(ibeam).sampleAmplitude05dB_p;
+    %        beamAmp(ibeam,1:numSamps(ibeam))=tempBeamAmp;
+    %    end
+    %    wcdat(idgm).beamData_p.beamAmp=beamAmp;
 
 % probably need to pad out the beamAmp records here? or not? let's try not
 % for now
@@ -213,15 +217,16 @@ save(sampinfofile,'maxSamps','minSamps','keepSamps')
 % save key metadata to see if changes ever
 keymetafile=fullfile(outdir,['keymeta_' filecode '.mat']);
 save(keymetafile,'SoundSpeed','SampFreq','Nrx','TVGFuncApplied',...
-    'TVGOffset','TxBeamWidth','startRangeSampNum','xmitSectNum')
+    'TVGOffset','TxBeamWidth','startRangeSampNum','xmitSectNum',...
+    'beamAngle')
 % store necessary metadata for gridding
 gridmeta.SoundSpeed=SoundSpeed; % 1-D vector
 gridmeta.SampFreq=SampFreq; % 1-D vector
-%gridmeta.beamAngle=beamAngle; % 2-D grid
+gridmeta.beamAngle=beamAngle; % 2-D grid
 gridmeta.numBeams=Nrx; % 1-D vector
-% RxBeamWidth   degrees
-% TxBeamWidth   degrees
-% TVGFuncApplied
-% TVGOffset
+%gridmeta.RxBeamWidth=RxBeamWidth;
+gridmeta.TxBeamWidth=TxBeamWidth;
+gridmeta.TVGFuncApplied=TVGFuncApplied;
+gridmeta.TVGOffset=TVGOffset;
 % beamAmp
 

@@ -14,6 +14,7 @@ TVGOffset=keymeta.TVGOffset;
 TxBeamWidth=keymeta.TxBeamWidth;
 startRangeSampNum=keymeta.startRangeSampNum;
 xmitSectNum=keymeta.xmitSectNum;
+beamAngle=keymeta.beamAngle;
 
 Npings=length(SoundSpeed);
 
@@ -90,4 +91,16 @@ plot(TxBeamWidth)
 xlabel('ping number')
 ylabel('Transmit Beam Width (degrees)')
 title(datalabel)
+
+figure(4)
+tiledlayout('horizontal')
+%next tile
+nexttile
+pcolor(beamAngle)
+shading flat
+cb4=colorbar;
+cb4.Label.String='beam angle (degrees)';
+ylabel('ping number')
+xlabel('beam number')
+
 

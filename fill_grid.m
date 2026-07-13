@@ -8,10 +8,10 @@ function fill_grid()
 % variable      units       source                          used for
 % SoundSpeed    m/s         rxInfo.soundVelocity_mPerSec    range
 % SampFreq      Hz          rxInfo.sampleFreq_Hz            range
-% Nrx           --          rxInfo.numBeams
 % TVGFuncApplied ?          rxInfo.TVGfunctionApplied       TS
 % TVGOffset      dB         rxInfo.TVGoffset_dB             TS
-% beamAngle     degrees                                     x,z
+% Nrx           --          rxInfo.numBeams
+% beamAngle     degrees     .beamData_p.beamPointAngReVertical_deg  x,z
 % beamAmp       ?
 % RxBeamWidth   degrees
 % TxBeamWidth   degrees
