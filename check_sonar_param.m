@@ -12,6 +12,10 @@ Nrx=keymeta.Nrx;
 TVGFuncApplied=keymeta.TVGFuncApplied;
 TVGOffset=keymeta.TVGOffset;
 TxBeamWidth=keymeta.TxBeamWidth;
+RxBeamWidth=keymeta.RxBeamWidth;
+cenSec=keymeta.cenSec;
+cenFreq=keymeta.cenFreq;
+humFreq=keymeta.humFreq;
 startRangeSampNum=keymeta.startRangeSampNum;
 xmitSectNum=keymeta.xmitSectNum;
 beamAngle=keymeta.beamAngle;
@@ -87,9 +91,23 @@ tiledlayout('horizontal')
 % next tile
 nexttile
 plot(TxBeamWidth)
-
 xlabel('ping number')
 ylabel('Transmit Beam Width (degrees)')
+title(datalabel)
+% next tile
+nexttile
+plot(RxBeamWidth)
+xlabel('ping number')
+ylabel('Recieve Beam Width (degrees)')
+title(datalabel)
+% next tile
+nexttile
+plot(humFreq)
+hold on
+plot(cenFreq)
+hold off
+xlabel('ping number')
+ylabel('Central Frequency (Hz)')
 title(datalabel)
 
 figure(4)

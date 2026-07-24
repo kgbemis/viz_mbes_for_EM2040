@@ -19,12 +19,23 @@ fname = fullfile(datadir,filename);
 % read metadata from kmwcd file
 KMALLdata = CFF_read_kmall(fname);
 wcdat=KMALLdata.EMdgmMWC;  % water column metadata
+% check if IIP datagram exists; parse metadata if it does; this
+% installation record only ever has one datagram
+if isfield(KMALLdata,'EMdgmIIP')
+    iip_exists=1;
+    iipdat=KMALLdata.EMdgmIIP;
+    fprintf('iipdat size %d x %d \n',size(iipdat))
+    % if have IIP datagram, parse for installation information
+    install_dat=parse_install_txt(iipdat);
+else
+    fprintf('no IIP datagrams in kmwcd file\n')
+end
 
 % read metadata from kmall file if needed
 if ~isempty(filename2)
     fname2 = fullfile(datadir,filename2);
     KMALLdata2 = CFF_read_kmall(fname2);
-    KMALLdata2.EMdgmMRZ
+    %KMALLdata2.EMdgmMRZ
 end % isempty 
 
 % check and print basic file information
@@ -127,6 +138,10 @@ SampFreq=zeros(Ndgm,1);
 TVGFuncApplied=zeros(Ndgm,1);
 TVGOffset=zeros(Ndgm,1);
 TxBeamWidth=zeros(Ndgm,maxNumSectors);
+cenFreq=zeros(Ndgm,maxNumSectors);
+cenSec=zeros(Ndgm,1);
+humFreq=zeros(Ndgm,1);
+RxBeamWidth=zeros(Ndgm,1);
 startRangeSampNum=zeros(Ndgm,max(numbeams));
 xmitSectNum=zeros(Ndgm,max(numbeams));
 beamAngle=zeros(Ndgm,max(numbeams));
@@ -143,18 +158,20 @@ for idgm=startDgm:endDgm
         NumSectors=wcdat(idgm).txInfo.numTxSectors;
         switch NumSectors
             case 1
-                cenSec=1;
+                cenSec(idgm)=1;
             case 2
-                cenSec=1;
+                cenSec(idgm)=1;
             case 3
-                cenSec=2;
+                cenSec(idgm)=2;
             otherwise
                 fprintf('unexpected number of sectors\n')
-                cenSec=1;  %arbitrary choice just so set
+                cenSec(idgm)=1;  %arbitrary choice just so set
         end
-        % also need the transmit beamwidth
+        % also need the transmit beamwidth and to capture the central 
+        %   frequency even though expect same for all pings
         for isec=1:NumSectors
             TxBeamWidth(idgm,isec)=wcdat(idgm).sectorData(isec).txBeamWidthAlong_deg;
+            cenFreq(idgm,isec)=wcdat(idgm).sectorData(isec).centreFreq_Hz./1000;
         end
  
     % rxInfo 
@@ -164,6 +181,59 @@ for idgm=startDgm:endDgm
         SampFreq(idgm)=wcdat(idgm).rxInfo.sampleFreq_Hz;
         TVGFuncApplied(idgm)=wcdat(idgm).rxInfo.TVGfunctionApplied;
         TVGOffset(idgm)=wcdat(idgm).rxInfo.TVGoffset_dB;
+
+    % Tx and Rx installation information
+    %   system information found unparsed in IIP datagram
+    %   IIP datagrams are in EMdgmIIP
+    %   parse EMdgmIIP.install_txt for TX, RX, and SYSTEM fields
+    %       can get system name (EM2040-MKII)
+    %               system setup - single Tx, single Rx
+    %               Tx Beamwidth
+    %       so far nothing else meaningful
+    %
+    % expect Beamwidths to follow what given for EM2040-MKII
+	%	                200 kHz   300 kHz 400 kHz 600 kHz 700 kHz
+    %   TX EM 2040-04 	0.7° 	  0.5° 	  0.4° 	  0.25°   0.225° 
+    %   TX EM 2040-07 	1.5° 	  1° 	  0.7° 	  0.5°    0.45° 
+    %   RX 		        1.5° 	  1° 	  0.7° 	  0.5°    0.45°
+    %
+    if iip_exists
+        % if have IIP datagram, use metadata parsed above
+        tx_check=install_dat.tx_check;
+        if tx_check~=TxBeamWidth(idgm,cenSec(idgm))
+            fprintf('possible error in TX beamwidth: \n')
+            fprintf('   sector data value = %f \n',TxBeamWidth(idgm,cenSec(idgm)))
+            fprintf('   install meta value = %f \n',tx_check)
+        end
+        sys_name=install_dat.sys_name;
+        if ~strcmp(sys_name,'EM 2040-MkII')
+            fprintf('unexpected system name: %s\n',sys_name)
+        end
+    else
+        % set based on standard expectations for the current central
+        % frequency
+        switch cenFreq(idgm)
+            case abs(cenFreq(idgm)-200)<100
+                humFreq(idgm)=200;
+                RxBeamWidth(idgm)=1.5;
+            case abs(cenFreq(idgm)-300)<100
+                humFreq(idgm)=300;
+                RxBeamWidth(idgm)=1.0;
+            case abs(cenFreq(idgm)-400)<100
+                humFreq(idgm)=400;
+                RxBeamWidth(idgm)=0.7;
+            case abs(cenFreq(idgm)-600)<100
+                humFreq(idgm)=600;
+                RxBeamWidth(idgm)=0.5;
+            case abs(cenFreq(idgm)-700)<100
+                humFreq(idgm)=700;
+                RxBeamWidth(idgm)=0.45;
+            other
+                humFreq(idgm)=NaN;
+                RxBeamWidth(idgm)=NaN;
+                fprintf('unexpected central frequency \n')
+        end
+    end
     
     % beamData_p
         startRangeSampNum(idgm,:)=wcdat(idgm).beamData_p.startRangeSampleNum;
@@ -218,7 +288,7 @@ save(sampinfofile,'maxSamps','minSamps','keepSamps')
 keymetafile=fullfile(outdir,['keymeta_' filecode '.mat']);
 save(keymetafile,'SoundSpeed','SampFreq','Nrx','TVGFuncApplied',...
     'TVGOffset','TxBeamWidth','startRangeSampNum','xmitSectNum',...
-    'beamAngle')
+    'beamAngle','RxBeamWidth','cenFreq','humFreq','cenSec')
 % store necessary metadata for gridding
 gridmeta.SoundSpeed=SoundSpeed; % 1-D vector
 gridmeta.SampFreq=SampFreq; % 1-D vector
@@ -229,4 +299,5 @@ gridmeta.TxBeamWidth=TxBeamWidth;
 gridmeta.TVGFuncApplied=TVGFuncApplied;
 gridmeta.TVGOffset=TVGOffset;
 % beamAmp
+y.meta=gridmeta;
 
