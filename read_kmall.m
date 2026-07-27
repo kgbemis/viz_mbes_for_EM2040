@@ -46,8 +46,12 @@ fprintf('start date = %s \n',...
 fprintf('end date = %s \n',...
     datetime(wcdat(end).header.time_sec,'ConvertFrom','posixtime',...
     'Format','dd-MM-yyyy HH:mm:ss'))
-fprintf('central frequency of center sector = %4.0f kHz \n',...
-    wcdat(1).sectorData(1).centreFreq_Hz./1000)
+NumSec=wcdat(1).txInfo.numTxSectors;
+fprintf('number of sectors = %d \n',NumSec)
+for i=1:NumSec
+    fprintf('  central frequency of sector %d = %4.0f kHz \n',...
+        i,wcdat(1).sectorData(i).centreFreq_Hz./1000)
+end
 
 % pull most of setup data
 totalNdgm=length(wcdat);
@@ -146,6 +150,8 @@ startRangeSampNum=zeros(Ndgm,max(numbeams));
 xmitSectNum=zeros(Ndgm,max(numbeams));
 beamAngle=zeros(Ndgm,max(numbeams));
 DR=zeros(Ndgm,max(numbeams));
+numsecs=zeros(Ndgm,1);
+tx_check=zeros(Ndgm,1);
 
 % loop over set datagrams
 for idgm=startDgm:endDgm
@@ -156,6 +162,7 @@ for idgm=startDgm:endDgm
         % EM2040 tranmits in multiple sectors -- need to check how actually
         % set up - could be a 3-sector or 4-sector or other    
         NumSectors=wcdat(idgm).txInfo.numTxSectors;
+        numsecs(idgm)=NumSectors;
         switch NumSectors
             case 1
                 cenSec(idgm)=1;
@@ -199,41 +206,51 @@ for idgm=startDgm:endDgm
     %
     if iip_exists
         % if have IIP datagram, use metadata parsed above
-        tx_check=install_dat.tx_check;
-        if tx_check~=TxBeamWidth(idgm,cenSec(idgm))
-            fprintf('possible error in TX beamwidth: \n')
-            fprintf('   sector data value = %f \n',TxBeamWidth(idgm,cenSec(idgm)))
-            fprintf('   install meta value = %f \n',tx_check)
-        end
+        tx_check(idgm)=install_dat.tx_check;
+        % **** in-loop check removed as tx_check seems to always be 0.7 
+        % even though sector data lists multiple and different values ****
+        %if tx_check~=TxBeamWidth(idgm,cenSec(idgm))
+            %fprintf('possible error in TX beamwidth: \n')
+            %fprintf('   sector data value = %f \n',TxBeamWidth(idgm,cenSec(idgm)))
+            %fprintf('   install meta value = %f \n',tx_check)
+        %end
+        % ** instead will store value for later check ***
         sys_name=install_dat.sys_name;
         if ~strcmp(sys_name,'EM 2040-MkII')
             fprintf('unexpected system name: %s\n',sys_name)
         end
-    else
+    end
+    % always need to set Rx as it's not in the metadata
         % set based on standard expectations for the current central
         % frequency
-        switch cenFreq(idgm)
-            case abs(cenFreq(idgm)-200)<100
+        %fprintf('central frequency %f \n',cenFreq(idgm,cenSec(idgm)))
+        if abs(cenFreq(idgm,cenSec(idgm))-200)<50
                 humFreq(idgm)=200;
                 RxBeamWidth(idgm)=1.5;
-            case abs(cenFreq(idgm)-300)<100
+                %fprintf('setting Rx for 200 Hz\n')
+        elseif abs(cenFreq(idgm,cenSec(idgm))-300)<50
                 humFreq(idgm)=300;
                 RxBeamWidth(idgm)=1.0;
-            case abs(cenFreq(idgm)-400)<100
+                %fprintf('setting Rx for 300 Hz\n')
+        elseif abs(cenFreq(idgm,cenSec(idgm))-400)<50
                 humFreq(idgm)=400;
                 RxBeamWidth(idgm)=0.7;
-            case abs(cenFreq(idgm)-600)<100
+                %fprintf('setting Rx for 400 Hz\n')
+        elseif abs(cenFreq(idgm,cenSec(idgm))-600)<50
                 humFreq(idgm)=600;
                 RxBeamWidth(idgm)=0.5;
-            case abs(cenFreq(idgm)-700)<100
+                %fprintf('setting Rx for 600 Hz\n')
+        elseif abs(cenFreq(idgm,cenSec(idgm))-700)<50
                 humFreq(idgm)=700;
                 RxBeamWidth(idgm)=0.45;
-            other
+                %fprintf('setting Rx for 700 Hz\n')
+        else
                 humFreq(idgm)=NaN;
                 RxBeamWidth(idgm)=NaN;
                 fprintf('unexpected central frequency \n')
+                fprintf('setting Rx to NaN\n')
         end
-    end
+    
     
     % beamData_p
         startRangeSampNum(idgm,:)=wcdat(idgm).beamData_p.startRangeSampleNum;
@@ -278,9 +295,24 @@ for idgm=startDgm:endDgm
 
 end
 
-% store all data in structure so can manipulate elsewhere
-% extract filecode for building output filenames
+% extract filecode for building output filenames and table
 [~,filecode,~]=fileparts(fname);
+
+% some summary values for places where inconsistencies
+fprintf('end summary: %s \n',filecode)
+fprintf('  Number of Sectors = %d to %d \n',min(numsecs),max(numsecs))
+fprintf('Sector   Central_Frequency  Tx Beamwidth  \n')
+fprintf('         min       max      min       max  \n')
+for i=1:max(numsecs)
+  fprintf('   %d     %5.1f     %5.1f    %5.2f     %5.2f \n',i,...
+      min(cenFreq(:,i)),max(cenFreq(:,i)),min(TxBeamWidth(:,i)),...
+      max(TxBeamWidth(:,i)))   
+end
+  fprintf('Tx check: %f to %f \n',min(tx_check),max(tx_check))
+
+
+
+% store all data in structure so can manipulate elsewhere
 % save number of sample information
 sampinfofile=fullfile(outdir,['sampinfo_' filecode '.mat']);
 save(sampinfofile,'maxSamps','minSamps','keepSamps')

@@ -102,13 +102,16 @@ ylabel('Recieve Beam Width (degrees)')
 title(datalabel)
 % next tile
 nexttile
-plot(humFreq)
+plot(humFreq,'--')
 hold on
 plot(cenFreq)
+plot(cenFreq(:,fix(mean(cenSec))),':k')
 hold off
+ylim([0 800])
 xlabel('ping number')
 ylabel('Central Frequency (Hz)')
 title(datalabel)
+legend('nominal','sectors')
 
 figure(4)
 tiledlayout('horizontal')
