@@ -94,6 +94,12 @@ plot(TxBeamWidth)
 xlabel('ping number')
 ylabel('Transmit Beam Width (degrees)')
 title(datalabel)
+[ntx,mtx]=size(TxBeamWidth);
+size(TxBeamWidth)
+nsec=min([ntx mtx]);
+for i=1:nsec
+    text(1,0.8+i/40,['sec ' num2str(i) ' bw = ' num2str(mean(TxBeamWidth(:,i)))])
+end
 % next tile
 nexttile
 plot(RxBeamWidth)

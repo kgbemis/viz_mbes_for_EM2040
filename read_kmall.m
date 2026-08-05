@@ -320,7 +320,8 @@ save(sampinfofile,'maxSamps','minSamps','keepSamps')
 keymetafile=fullfile(outdir,['keymeta_' filecode '.mat']);
 save(keymetafile,'SoundSpeed','SampFreq','Nrx','TVGFuncApplied',...
     'TVGOffset','TxBeamWidth','startRangeSampNum','xmitSectNum',...
-    'beamAngle','RxBeamWidth','cenFreq','humFreq','cenSec')
+    'beamAngle','RxBeamWidth','cenFreq','humFreq','cenSec',...
+    'numsecs')
 % store necessary metadata for gridding
 gridmeta.SoundSpeed=SoundSpeed; % 1-D vector
 gridmeta.SampFreq=SampFreq; % 1-D vector
