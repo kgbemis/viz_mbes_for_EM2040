@@ -72,6 +72,8 @@ pcolor(startRangeSampNum)
 shading flat
 cb2=colorbar;
 cb2.Label.String='Starting Sample Number for Range';
+not0=sum(find(startRangeSampNum(:)~=0));
+text(10,75,['not 0 = ' num2str(not0)])
 title(datalabel)
 ylabel('ping number')
 xlabel('beam number')
@@ -82,44 +84,58 @@ pcolor(xmitSectNum)
 shading flat
 cb3=colorbar;
 cb3.Label.String='Xmit Sect Num';
+mxn=mean(xmitSectNum(:));
+sxn=std(xmitSectNum(:));
+text(10,25,[num2str(mxn) '+/-' num2str(sxn)],'Color','w')
+not1=sum(find(xmitSectNum(:)~=1));
+is1=sum(find(xmitSectNum(:)==1));
+text(10,50,['not 1 = ' num2str(100*not1/is1) '%'],'Color','w')
+text(10,75,['not 1 = ' num2str(not1)],'Color','w')
 title(datalabel)
 ylabel('ping number')
 xlabel('beam number')
 
 figure(3)
 tiledlayout('horizontal')
-% next tile
+% next tile - TX beam width
 nexttile
-plot(TxBeamWidth)
-xlabel('ping number')
-ylabel('Transmit Beam Width (degrees)')
-title(datalabel)
-[ntx,mtx]=size(TxBeamWidth);
-size(TxBeamWidth)
-nsec=min([ntx mtx]);
-for i=1:nsec
-    text(1,0.8+i/40,['sec ' num2str(i) ' bw = ' num2str(mean(TxBeamWidth(:,i)))])
-end
-% next tile
+    plot(TxBeamWidth)
+    ylim([0 1.5])
+    xlabel('ping number')
+    ylabel('Transmit Beam Width (degrees)')
+    title(datalabel)
+    [ntx,mtx]=size(TxBeamWidth);
+    size(TxBeamWidth)
+    nsec=min([ntx mtx]);
+    for i=1:nsec
+        text(1,1.0+i/20,['sec ' num2str(i) ' bw = ' num2str(mean(TxBeamWidth(:,i)))])
+    end
+% next tile - RX beamwidth
 nexttile
-plot(RxBeamWidth)
-xlabel('ping number')
-ylabel('Recieve Beam Width (degrees)')
-title(datalabel)
-% next tile
+    plot(RxBeamWidth)
+    ylim([0 1.5])
+    xlabel('ping number')
+    ylabel('Recieve Beam Width (degrees)')
+    title(datalabel)
+% next tile - center frequency
 nexttile
-plot(humFreq,'--')
-hold on
-plot(cenFreq)
-plot(cenFreq(:,fix(mean(cenSec))),':k')
-hold off
-ylim([0 800])
-xlabel('ping number')
-ylabel('Central Frequency (Hz)')
-title(datalabel)
-legend('nominal','sectors')
+    plot(humFreq,'--')
+    hold on
+        plot(cenFreq)
+        plot(cenFreq(:,fix(mean(cenSec))),':k')
+        for i=1:nsec
+            text(1,75+i*30,['sec ' num2str(i) ' Cfreq = ' num2str(mean(cenFreq(:,i)))])
+        end    
+        text(1,25,['nominal Cfreq = ' num2str(mean(humFreq))])
+    hold off
+    ylim([0 800])
+    xlabel('ping number')
+    ylabel('Central Frequency (Hz)')
+    title(datalabel)
+    legend('nominal','sectors')
 
 figure(4)
+colormap(hsv(25))
 tiledlayout('horizontal')
 %next tile
 nexttile
