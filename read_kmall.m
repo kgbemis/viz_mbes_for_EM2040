@@ -59,6 +59,7 @@ Nrx=arrayfun(@(x) x.rxInfo.numBeams,wcdat);
 if abs(mean(diff(Nrx)))>0
     fprintf('WARNING: inconsistent number of beams across datagrams\n')
 end
+maxNrx=max(Nrx);
 posixtimes=arrayfun(@(x) x.header.time_sec,wcdat);
 tnanosec=arrayfun(@(x) x.header.time_nanosec,wcdat);
 pingcount=arrayfun(@(x) x.cmnPart.pingCnt,wcdat);
@@ -88,7 +89,7 @@ maxWCSampIdx1=numSamps1(1);
     fprintf('number samples (ping 1, beam 1) = %d\n',maxWCSampIdx1)
 maxSamps=zeros(Ndgm,1);
 minSamps=zeros(Ndgm,1);
-keepSamps=zeros(Nrx(1),totalNdgm);
+keepSamps=zeros(maxNrx,totalNdgm);
 for i=1:totalNdgm
     numSamps=wcdat(i).beamData_p.numSampleData;
     maxSamps(i)=max(numSamps);
@@ -152,7 +153,7 @@ beamAngle=zeros(Ndgm,max(numbeams));
 DR=zeros(Ndgm,max(numbeams));
 numsecs=zeros(Ndgm,1);
 tx_check=zeros(Ndgm,1);
-
+beamAmpData=zeros(maxNrx,maxWCSampIdx,Ndgm);
 % loop over set datagrams
 for idgm=startDgm:endDgm
 
@@ -257,20 +258,27 @@ for idgm=startDgm:endDgm
             % in practice, this may always be 0
             % should check and adjust range calculations based on this
     
-        % numSamps set outside this loop already so just use as numSamps(idgm)
+        % numSamps extracted outside this loop as keepSamps(idgm)
+        numSamps=keepSamps(:,idgm);
         xmitSectNum(idgm,:)=wcdat(idgm).beamData_p.beamTxSectorNum;
         beamAngle(idgm,:)=wcdat(idgm).beamData_p.beamPointAngReVertical_deg';
         DR(idgm,:)=wcdat(idgm).beamData_p.detectedRangeInSamples; 
 
     % read beamAmp from binary file
-    %beamAmpdata=read_bin_kmall(fname,wcdat(idgm));
-    %    beamAmp=zeros(Nrx,1);
-    %    for ibeam=1:Nrx
-    %        tempBeamAmp=beamAmpdata(ibeam).sampleAmplitude05dB_p;
-    %        beamAmp(ibeam,1:numSamps(ibeam))=tempBeamAmp;
-    %    end
-    %    wcdat(idgm).beamData_p.beamAmp=beamAmp;
+    % this pulls only the data from datagram idgm
+    beamAmpdata=read_bin_kmall(fname,wcdat(idgm));    
+    % then unpack that data into an array
+    %   array size will be (Nrx=number of beams, maximum samples per beam)
+        beamAmp=zeros(Nrx(idgm),maxWCSampIdx);
+        for ibeam=1:Nrx(idgm)
+            tempBeamAmp=beamAmpdata(ibeam).sampleAmplitude05dB_p;
+            beamAmp(ibeam,1:numSamps(ibeam))=tempBeamAmp;
+        end
+        beamAmpData(:,:,idgm)=beamAmp;
+        % not currently using the following so commenting it out
+        %wcdat(idgm).beamData_p.beamAmp=beamAmp;
 
+% actually the above may effective pad everything out
 % probably need to pad out the beamAmp records here? or not? let's try not
 % for now
 % some thoughts from google/MatlabCentral on better padding operation:
@@ -315,13 +323,13 @@ end
 % store all data in structure so can manipulate elsewhere
 % save number of sample information
 sampinfofile=fullfile(outdir,['sampinfo_' filecode '.mat']);
-save(sampinfofile,'maxSamps','minSamps','keepSamps')
+save(sampinfofile,'maxSamps','minSamps','keepSamps','maxWCSampIdx')
 % save key metadata to see if changes ever
 keymetafile=fullfile(outdir,['keymeta_' filecode '.mat']);
 save(keymetafile,'SoundSpeed','SampFreq','Nrx','TVGFuncApplied',...
     'TVGOffset','TxBeamWidth','startRangeSampNum','xmitSectNum',...
     'beamAngle','RxBeamWidth','cenFreq','humFreq','cenSec',...
-    'numsecs')
+    'numsecs','maxWCSampIdx')
 % store necessary metadata for gridding
 gridmeta.SoundSpeed=SoundSpeed; % 1-D vector
 gridmeta.SampFreq=SampFreq; % 1-D vector
@@ -331,6 +339,10 @@ gridmeta.numBeams=Nrx; % 1-D vector
 gridmeta.TxBeamWidth=TxBeamWidth;
 gridmeta.TVGFuncApplied=TVGFuncApplied;
 gridmeta.TVGOffset=TVGOffset;
-% beamAmp
+% beamAmp data was stored into the metadata structure so could just save
+% that except that means pulling all over again
+beamampfile=fullfile(outdir,['beamampdata_' filecode '.mat']);
+save(beamampfile,'beamAmpData')
+
 y.meta=gridmeta;
 
